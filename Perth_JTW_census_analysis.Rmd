@@ -1,0 +1,164 @@
+---
+title: "Perth COVID-19 study; journey to work census analysis"
+runningheader: "Perth COVID-19 study; journey to work census analysis" # only for pdf output
+subtitle: "Perth COVID-19 study; journey to work census analysis" # only for html output
+author: "Dr James Reynolds, Monash University Public Transport Research Group (PTRG)"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+bibliography: Perth_JTW_census_analysis.bib
+link-citations: yes
+---
+
+```{r setup, include=FALSE}
+library(tufte)
+library(tidyverse)
+library(sp)
+library(ggplot2)
+library(sf)
+library(ASGS.foyer)
+library(raster)
+library(ggmap)
+library(units)
+library(absmapsdata)
+library(readabs)
+library(readr)
+
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+```
+
+# Introduction
+The Monash University Public Transport Research Group is looking at changes in travel behaviour in Perth surrounding the COVID-19 pandemic. Part of this work involves examining the Australian Bureau of Statistics (ABS) data, with a particular emphasis on the 2016 and 2021 censuses. This working note details the process of collecting and reviewing the ABS data. It is structured as follows: the next section details the processing of the ABS data; Section 3 presents the results; followed by a brief discussion in Section 4; and conclusions in Section 5. 
+
+# 2.0 Methods and data processing
+Using the ABS data manipulation package absmapsdata [@absmapsdata]^[See https://github.com/wfmackey/absmapsdata], to download the Destination Zone files. 
+
+```{r load_abs_data, echo=FALSE, fig.fullwidth=TRUE, fig.cap="Perth 2016 destination zonea", cache=TRUE}
+
+#Load DZ2016 data
+DZ2016_map_data <- dz2016
+
+#Load SA1_2016 data
+sa1_2016_map_data <- sa12016
+sa2_gcc_code <- tibble(sa2_code_2016 = sa1_2016_map_data$sa2_code_2016,
+                       sa2_name_2016 = sa1_2016_map_data$sa2_name_2016,
+                       gcc_name_2016 = sa1_2016_map_data$gcc_name_2016)
+
+
+#join gcc_name_2016 into DZ2016 dataset
+DZ2016_map_data_joined_gcc <- left_join(DZ2016_map_data, sa2_gcc_code, by = "sa2_code_2016")
+
+
+#convert square km values back to numeric class
+DZ2016_map_data_joined_gcc$areasqkm_2016 <- as.numeric(DZ2016_map_data_joined_gcc$areasqkm_2016) 
+
+#Map destination zones
+map <- DZ2016_map_data_joined_gcc %>%
+  filter(gcc_name_2016 == "Greater Perth") %>%   # let's just look at Perth
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = areasqkm_2016),     # fill by area size
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf()
+
+map
+
+```
+
+Next load the 2021 destination zones
+
+```{r load_abs_2021_destination_zones_data, echo=FALSE, fig.fullwidth=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
+
+#Load DZ2021 data
+DZ2021_map_data <- dz2021
+
+#Load SA1_2021 data
+sa1_2021_map_data <- sa12021
+sa2_gcc_code <- tibble(sa2_code_2021 = sa1_2021_map_data$sa2_code_2021,
+                       sa2_name_2021 = sa1_2021_map_data$sa2_name_2021,
+                       gcc_name_2021 = sa1_2021_map_data$gcc_name_2021)
+
+
+#join gcc_name_2021 into DZ2021 dataset
+DZ2021_map_data_joined_gcc <- left_join(DZ2021_map_data, sa2_gcc_code, by = "sa2_code_2021")
+
+
+#convert square km values back to numeric class
+DZ2021_map_data_joined_gcc$areasqkm_2021 <- as.numeric(DZ2021_map_data_joined_gcc$areasqkm_2021) 
+
+#Map destination zones
+map <- DZ2021_map_data_joined_gcc %>%
+  filter(gcc_name_2021 == "Greater Perth") %>%   # let's just look at Perth
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = areasqkm_2021),     # fill by area size
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf()
+
+map
+
+```
+
+
+Next, load the ABS journey to work data and join it to the DZ data
+
+```{r load_abs_jtw_data, echo=FALSE, fig.fullwidth=TRUE, fig.cap="Melbourne SA1 map", cache=TRUE}
+
+Greater_Perth_JTW_by_destination_2016 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2016.csv", 
+    skip = 8)
+Greater_Perth_JTW_by_destination_2021 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2021.csv", 
+    skip = 8)
+Greater_Perth_JTW_by_origin_2016 <- read_csv("01 data/Greater_Perth_JTW_by_origin_2016.csv", 
+    skip = 8)
+Greater_Perth_JTW_by_origin_2021 <- read_csv("01 data/Greater_Perth_JTW_by_origin_2021.csv", 
+    skip = 8)
+
+#remove first empty row and last 5 rows with copywrite info
+Greater_Perth_JTW_by_destination_2016 <- Greater_Perth_JTW_by_destination_2016[2:(nrow(Greater_Perth_JTW_by_destination_2016)-5),]
+Greater_Perth_JTW_by_destination_2021<- Greater_Perth_JTW_by_destination_2021[2:(nrow(Greater_Perth_JTW_by_destination_2021)-5),]
+Greater_Perth_JTW_by_origin_2016 <- Greater_Perth_JTW_by_origin_2016[2:(nrow(Greater_Perth_JTW_by_origin_2016)-5),]
+Greater_Perth_JTW_by_origin_2021 <- Greater_Perth_JTW_by_origin_2021[2:(nrow(Greater_Perth_JTW_by_origin_2021)-5),]
+
+#update first column name to be dz_code_2016
+names(Greater_Perth_JTW_by_destination_2016) <- 
+  c("dz_code_2016", 
+    names(Greater_Perth_JTW_by_destination_2016[,2:ncol(Greater_Perth_JTW_by_destination_2016)]))
+
+Greater_Perth_JTW_by_DZ2016_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, DZ2016_map_data_joined_gcc, by = "dz_code_2016")
+
+
+
+```
+
+# 3.0 Results
+
+# 4.0 Discussion
+
+# 5.0 Conclusions
+
+#References
+
+
+
+```{r bib, include=FALSE}
+# create a bib file for the R packages used in this document
+knitr::write_bib(c('base', 'rmarkdown'), file = 'skeleton.bib')
+```
