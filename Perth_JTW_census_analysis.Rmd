@@ -131,6 +131,16 @@ map <- DZ2021_map_data_joined_gcc %>%
 
 ```
 
+The ABS provides a correspondence file to convert between 2016 and 2021 destination zones. 
+
+```{r load_abs_2021_2016_destination_zones_correspondence, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
+
+#Load DZ2021 to DZ2016 correspondence file
+CG_DZN_2016_DZN_2021 <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/CG_DZN_2016_DZN_2021.csv")
+
+
+```
+
 
 The Journey-To-Work (JTW) data was extracted using the Table Builder on the ABS website. Data from 2016 and 2021 for Greater Perth was obtained. Join this with the Destination Zones allows mode shares to be mapped, as shown in the margin figure.
 
@@ -168,6 +178,7 @@ names(Greater_Perth_JTW_by_destination_2021) <-
     names(Greater_Perth_JTW_by_destination_2021[,2:ncol(Greater_Perth_JTW_by_destination_2021)]))
 
 
+#convert
 
 #drop total column and convert to percentages
 Greater_Perth_JTW_by_destination_2016 <- tibble(Greater_Perth_JTW_by_destination_2016[,1:17] %>% adorn_percentages()) 
@@ -487,8 +498,8 @@ map
 
 ```
 
-In general, the car, as driver mode share has decreased across the Heritage area. The box and violin plot shows the difference in driver mode share by destination is significant, dropping from an average of 69% to 67% (p<0.01).
-
+In general, the car, as driver mode share has decreased across the Heritage area. The box and violin plot shown above (end of Section 2.0, left figure) the difference in driver mode share by destination is significant, dropping from an average of 69% to 67% (p<0.01).
+<!--
 ```{r Heritage_reshow_car_as_driver_mode_share_stats, fig.margin=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, car driver mode share by destination zone, comparison between 2021 and 2016 censuses"}
  
                                                       
@@ -501,6 +512,7 @@ p
 
 
 ```
+--->
 
 ### 3.1.2 Car, as passenger
 
@@ -526,6 +538,8 @@ map <- Greater_Perth_JTW_by_DZ %>%
 map
 
 ```
+
+
 ```{r Heritage_car_passenger_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, car as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
  
 
@@ -613,16 +627,18 @@ p
 
  The box and violin plot shows the change in train mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
  
-The maps might suggest that most of the change is in the central part of Perth, immediately in the 
+
+From the maps it appears that most of the train commuting is destined for the centre of Perth. Zooming in on the City of Perth gives:
+ 
+
+```{r City_of_Perth_train_zoom_map, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
 
 
-
-
-```{r Heritage_train_zoom_map, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
 
 #Map destination zones
 map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  filter(lga_name_2021 == "Perth") %>%  
+  filter(census != "Change: 2021 to 2016") %>%#look at Heritage zone only
   ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
               fill = `Train`),     
@@ -638,7 +654,287 @@ map <- Greater_Perth_JTW_by_DZ %>%
 
 map
 
+
+
 ```
+
+
+```{r City_of_Perth_Train_passenger_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+
+
+
+Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider <- 
+  Greater_Perth_JTW_by_DZ_no_geometry %>%
+  filter(lga_name_2021 == "Perth") %>%  
+  filter(census != "Change: 2021 to 2016") %>%#look at Heritage zone only
+    subset(select = c(dz_code, lga_name_2021, census, Train, grouping)) %>%
+    filter(!is.na(Train)) %>%
+  pivot_wider(
+    names_from = "census",
+    values_from = "Train"
+  )
+
+#appears that the zone codes have changed for central Perth between 2016 and 2021
+
+#remove NA rows
+Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider <- na.omit(Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider)
+
+#return to long (tidy) format
+Greater_Perth_JTW_by_DZ_train_Perth_LGA <- pivot_longer(Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Train")
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_train_Perth_LGA, 
+  x = census,
+  y = `Train`)
+
+p
+ 
+```
+
+ The box and violin plot shows the change in train mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_train %>% filter(lga_name_2021 == "Perth") %>% filter(census == "2016") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_train %>% filter(lga_name_2021 == "Perth") %>% filter(census == "2021") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
+ 
+
+
+
+### 3.1.3 Bus
+
+
+```{r Heritage_bus, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Bus`),     
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+
+```{r Heritage_bus_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+ 
+
+Greater_Perth_JTW_by_DZ_bus_wider <- 
+  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
+    subset(select = c(dz_code, lga_name_2021, census, Bus, grouping)) %>%
+    filter(census != "Change: 2021 to 2016") %>% 
+    filter(!is.na(Bus)) %>%
+  pivot_wider(
+    names_from = census,
+    values_from = Bus
+  )
+
+#remove NA rows
+Greater_Perth_JTW_by_DZ_bus_wider <- na.omit(Greater_Perth_JTW_by_DZ_bus_wider)
+
+#return to long (tidy) format
+Greater_Perth_JTW_by_DZ_bus <- pivot_longer(Greater_Perth_JTW_by_DZ_bus_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Bus")
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_bus %>% filter(grouping == "Heritage"), 
+  x = census,
+  y = Bus)
+
+p
+
+```
+
+ The box and violin plot shows the change in bus mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_bus %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Bus") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_bus %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Bus") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
+ 
+
+
+
+
+### 3.1.3 Bicycle
+
+
+```{r Heritage_Bicycle, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Bicycle`),     
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+
+```{r Heritage_Bicycle_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+ 
+
+Greater_Perth_JTW_by_DZ_Bicycle_wider <- 
+  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
+    subset(select = c(dz_code, lga_name_2021, census, Bicycle, grouping)) %>%
+    filter(census != "Change: 2021 to 2016") %>% 
+    filter(!is.na(Bicycle)) %>%
+  pivot_wider(
+    names_from = census,
+    values_from = Bicycle
+  )
+
+#remove NA rows
+Greater_Perth_JTW_by_DZ_Bicycle_wider <- na.omit(Greater_Perth_JTW_by_DZ_Bicycle_wider)
+
+#return to long (tidy) format
+Greater_Perth_JTW_by_DZ_Bicycle <- pivot_longer(Greater_Perth_JTW_by_DZ_Bicycle_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Bicycle")
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_Bicycle %>% filter(grouping == "Heritage"), 
+  x = census,
+  y = Bicycle)
+
+p
+
+```
+
+ The box and violin plot shows the change in Bicycle mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_Bicycle %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Bicycle") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_Bicycle %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Bicycle") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
+ 
+
+
+
+
+
+
+### 3.1.3 Walked
+
+
+```{r Heritage_Walked, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Walked only`),     
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+
+```{r Heritage_Walked_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+ 
+
+Greater_Perth_JTW_by_DZ_Walked_wider <- 
+  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
+    subset(select = c(dz_code, lga_name_2021, census, `Walked only`, grouping)) %>%
+    filter(census != "Change: 2021 to 2016") %>% 
+    filter(!is.na(`Walked only`)) %>%
+  pivot_wider(
+    names_from = census,
+    values_from = `Walked only`
+  )
+
+#remove NA rows
+Greater_Perth_JTW_by_DZ_Walked_wider <- na.omit(Greater_Perth_JTW_by_DZ_Walked_wider)
+
+#return to long (tidy) format
+Greater_Perth_JTW_by_DZ_Walked <- pivot_longer(Greater_Perth_JTW_by_DZ_Walked_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Walked only")
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_Walked %>% filter(grouping == "Heritage"), 
+  x = census,
+  y = "Walked only")
+
+p
+
+```
+
+ The box and violin plot shows the change in walking mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_Walked %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Walked only") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_Walked %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Walked only") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
+ 
+
+
+
+
+
+
+### 3.1.3 Worked at home
+
+
+```{r Heritage_WFH, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Worked at home`),     
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+
+```{r Heritage_WFH_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+ 
+
+Greater_Perth_JTW_by_DZ_WFH_wider <- 
+  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
+    subset(select = c(dz_code, lga_name_2021, census, `Worked at home`,
+                      grouping)) %>%
+    filter(census != "Change: 2021 to 2016") %>% 
+    filter(!is.na(`Worked at home`)) %>%
+  pivot_wider(
+    names_from = census,
+    values_from = `Worked at home`
+  )
+
+#remove NA rows
+Greater_Perth_JTW_by_DZ_WFH_wider <- na.omit(Greater_Perth_JTW_by_DZ_WFH_wider)
+
+#return to long (tidy) format
+Greater_Perth_JTW_by_DZ_WFH <- pivot_longer(Greater_Perth_JTW_by_DZ_WFH_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Worked at home")
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_WFH %>% filter(grouping == "Heritage"), 
+  x = census,
+  y = `Worked at home`)
+
+p
+
+```
+
+ The box and violin plot shows the change in WFH (mode) share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_WFH %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Worked at home") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_WFH %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Worked at home") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
+ 
+
+
 
 
 ## 3.2 North-south group
