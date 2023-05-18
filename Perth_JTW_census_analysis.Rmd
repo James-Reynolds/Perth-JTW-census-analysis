@@ -39,13 +39,14 @@ knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
 options(htmltools.dir.version = FALSE)
 ```
 
-# Introduction
-The Monash University Public Transport Research Group is looking at changes in travel behaviour in Perth surrounding the COVID-19 pandemic. Part of this work involves examining the Australian Bureau of Statistics (ABS) data, with a particular emphasis on the 2016 and 2021 censuses. This working note details the process of collecting and reviewing the ABS data. It is structured as follows: the next section details the processing of the ABS data; Section 3 presents the results; followed by a brief discussion in Section 4; and conclusions in Section 5. 
+# 1.0 Introduction
+The Monash University Public Transport Research Group is looking at changes in travel behaviour in Perth surrounding the COVID-19 pandemic. Part of this work involves examining the Australian Bureau of Statistics (ABS) journey-to-work data for the 2016 and 2021 censuses. This working note details the process of collecting and reviewing the ABS data. It is structured as follows: the next section details the processing of the ABS data; Section 3 presents the results; followed by a brief discussion in Section 4; and conclusions in Section 5. 
 
 # 2.0 Methods and data processing
-Using the ABS data manipulation package absmapsdata [@absmapsdata]^[See https://github.com/wfmackey/absmapsdata], to download the Destination Zone files. 
+The census asks respondents about their journey-to-work mode choice and destination. Destinations are allocated to Destination Zones, which can be obtained using the ABS data manipulation package absmapsdata [@absmapsdata]^[See https://github.com/wfmackey/absmapsdata]. 
 
-```{r load_abs_data, echo=FALSE, fig.fullwidth=TRUE, fig.cap="Perth 2016 destination zonea", cache=TRUE}
+
+```{r load_abs_data, echo=FALSE, message = FALSE, fig.margin=TRUE, fig.cap="Perth 2016 destination zonea", cache=TRUE}
 
 #Load DZ2016 data
 DZ2016_map_data <- dz2016
@@ -83,13 +84,12 @@ map <- DZ2016_map_data_joined_gcc %>%
   theme_void() +                    # clears other plot elements
   coord_sf()
 
-map
+#map
 
 ```
 
-Next load the 2021 destination zones
 
-```{r load_abs_2021_destination_zones_data, echo=FALSE, fig.fullwidth=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
+```{r load_abs_2021_destination_zones_data, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
 
 #Load DZ2021 data
 DZ2021_map_data <- dz2021
@@ -127,14 +127,14 @@ map <- DZ2021_map_data_joined_gcc %>%
   theme_void() +                    # clears other plot elements
   coord_sf()
 
-map
+#map
 
 ```
 
 
-Next, load the ABS journey to work data, turn it into percentages and join it to the DZ data. 
+The Journey-To-Work (JTW) data was extracted using the Table Builder on the ABS website. Data from 2016 and 2021 for Greater Perth was obtained. Join this with the Destination Zones allows mode shares to be mapped, as shown in the margin figure.
 
-```{r load_abs_jtw_data, echo=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
+```{r load_abs_jtw_data, echo=FALSE, message = FALSE, warning=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
 
 Greater_Perth_JTW_by_destination_2016 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2016.csv", 
     skip = 8)
@@ -199,9 +199,10 @@ map
 
 
 ```
-The margin figure shows the 'car, as driver' journey to work mode shift for 2016.  The next steps will therefore be to show the results for 2016, 2021 and the difference between the two as a single figure for each mode.
 
-```{r shift_into_one_data_frame_and_calculate_differences, echo=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
+
+
+```{r shift_into_one_data_frame_and_calculate_differences, echo=FALSE, message= FALSE, warning=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
 
 #move 2016 data into combined dataframe
 Greater_Perth_JTW_by_DZ <- Greater_Perth_JTW_by_DZ2016_2016
@@ -326,11 +327,11 @@ Greater_Perth_JTW_by_DZ <- Greater_Perth_JTW_by_DZ %>% add_row(
 
 ```
 
-It would help if the different analysis areas can be identified for each destination zone. The analysis areas were defined in Graham's sample size jottings worksheet as North-South Group ^[City of Melville, City of South Perth, City of Stirling, City of Joondalup, City of Wanneroo, City of Cockburn, City of Kwinana, City of Rockingham, City of Murray and City of Mandurah.], the Heritage Group ^[City of Bayswater, City of Belmont, City of Canning, City of Fremantle, City of Nedlands, City of Perth, City of Subiaco, City of Vincent, Shire of Peppermint Grove, Town of Bassendean, Town of Cambridge, Town of Claremont, Town of Cottesloe, Town of East Fremantle, Town of Mosman Park, Town of Victoria Park and City of Gosnells.] and the Outer East^[City of Kalamunda, City of Swan, Shire of Mundaring, City of Armadale, and Shire of Serpentine-Jarrahdale.].
+Next, the Greater Perth area is divided into the analysis areas defined in Graham's sample size jottings worksheet. These are the North-South Group ^[City of Melville, City of South Perth, City of Stirling, City of Joondalup, City of Wanneroo, City of Cockburn, City of Kwinana, City of Rockingham, City of Murray and City of Mandurah.], the Heritage Group ^[City of Bayswater, City of Belmont, City of Canning, City of Fremantle, City of Nedlands, City of Perth, City of Subiaco, City of Vincent, Shire of Peppermint Grove, Town of Bassendean, Town of Cambridge, Town of Claremont, Town of Cottesloe, Town of East Fremantle, Town of Mosman Park, Town of Victoria Park and City of Gosnells.] and the Outer East^[City of Kalamunda, City of Swan, Shire of Mundaring, City of Armadale, and Shire of Serpentine-Jarrahdale.].
 
 
 
-```{r add_groupings, echo=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
+```{r add_groupings, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
 
 #get ABS LGA boundaries
 lga_areas <- lga2021 %>% filter(state_name_2021 == "Western Australia")
@@ -362,53 +363,26 @@ map <- Greater_Perth_JTW_by_DZ %>%
   theme_void() +                    # clears other plot elements
   coord_sf() 
 
-map
+map 
+#+ qmap(location = "Perth")
 
+#Somewhere along the way the column names where changed to have . rather than spaces, let's change that back
+
+names(Greater_Perth_JTW_by_DZ) <- c("dz_code", "sa2_code", "sa2_shortcode", "sa2_name.x", "state_code", "state_name", "areadsqkm", "cent_lat", "cent_long", "sa2_name.y", "gcc_name", "Train", "Bus", "Ferry", "Tram or light rail", "Taxi or ride share service", "Car, as driver", "Car, as passenger", "Truck", "Motorbike or scooter", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "census", "lga_code_2021", "lga_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat.1", "cent_long.1", "grouping", "geometry")
 
                       
 ```
 
+This now allows the Hertiage, North-South and Outer East groups to be plotted separated and compared. 
 
-
-
-# 3.0 Results
-
-## 3.1 Private vehicles 
-
-### 3.1.1 Car as driver
-
-```{r Car_as_driver_mode_share_change, fig.margin=FALSE, fig.cap="Greater Perth, car driver mode share by destination zone}
-
-#Map car drive mode share
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(census != "Change: 2021 to 2016") %>% # let's just look at 2021 and 2016  
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Car..as.driver`),     # fill by car driver mode share
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(rows = vars(census), cols = vars(grouping), scales = "fixed")
-map
-
-```
-There appear to have been some changes in car, as driver mode split between 2016 and 2021. However, the comparison is a bit difficult to see. Instead comparing the change in mode share percentage directly gives: 
-
-
-```{r Car_as_driver_mode_share_change_compare, fig.margin=FALSE, fig.cap="Greater Perth, car driver mode share by destination zone, difference between 2021 and 2016, heritage zone}
+```{r all_zones_car_as_driver, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Comparing car, as driver mode shares across 2016 and 2021, and the three groupings"}
 
 #Map destination zones
 map <- Greater_Perth_JTW_by_DZ %>%
-  filter(census == "Change: 2021 to 2016") %>%   # let's just look at change between 2021 and 2016
-  filter(grouping == "Heritage") %>%   # let's just look at Heritage zone
+  filter(census != "Change: 2021 to 2016") %>%  #look at 2016 and 2021, but not the change.
   ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Car..as.driver`),     # fill by car driver mode share
+              fill = `Car, as driver`),     # fill by Car, as driver
           lwd = 0,                  # remove borders
           show.legend = TRUE) +    # keep legend
  # geom_point(aes(cent_long,
@@ -417,27 +391,53 @@ map <- Greater_Perth_JTW_by_DZ %>%
   theme_void() +                    # clears other plot elements
   coord_sf() +
   scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(grouping), scales = "fixed")
+  facet_grid(row = vars(census), cols = vars(grouping), scales = "fixed")
 
 map
 
 ```
 
-Here the ggstatsplot package^[See https://indrajeetpatil.github.io/ggstatsplot/articles/web_only/ggwithinstats.html][@ggstatsplot] is used. 
+Some changes are apparent. However, showing the differences between 2021 and 2016 directly gives: 
 
 
-```{r Car_as_driver_mode_share_change_ggstatsplot, fig.margin=FALSE, fig.cap="Greater Perth, car driver mode share by destination zone, comparison between 2021 and 2016 censuses"}
+```{r difference_in_car_as_driver_mode_share, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.cap="Car, as driver mode shares, difference between 2021 and 2016"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(census == "Change: 2021 to 2016") %>%  #look at differnce between 2021 and 2016 only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Car, as driver`),     # fill by Car, as driver
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+ facet_grid(cols = vars(grouping), scales = "fixed")
+
+
+map
+
+```
+
+It appears that the largest changes have been in the outer east. Looking at the stats using the ggstatsplot package^[See https://indrajeetpatil.github.io/ggstatsplot/articles/web_only/ggwithinstats.html][@ggstatsplot]  
+
+
+```{r difference_in_car_as_driver_mode_share_stats_tests, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, car driver mode share by destination zone, comparison between 2021 and 2016 censuses"}
 
 Greater_Perth_JTW_by_DZ_no_geometry <- tibble(st_drop_geometry(Greater_Perth_JTW_by_DZ))
   
 Greater_Perth_JTW_by_DZ_car_as_driver_wider <- 
   Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, `Car..as.driver`, grouping)) %>%
+    subset(select = c(dz_code, lga_name_2021, census, `Car, as driver`, grouping)) %>%
     filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(`Car..as.driver`)) %>%
+    filter(!is.na(`Car, as driver`)) %>%
   pivot_wider(
     names_from = census,
-    values_from = `Car..as.driver`
+    values_from = `Car, as driver`
   )
 
 #remove NA rows
@@ -446,18 +446,204 @@ Greater_Perth_JTW_by_DZ_car_as_driver_wider <- na.omit(Greater_Perth_JTW_by_DZ_c
 #return to long (tidy) format
 Greater_Perth_JTW_by_DZ_car_as_driver <- pivot_longer(Greater_Perth_JTW_by_DZ_car_as_driver_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Car, as driver")
                                                       
-
 p <- grouped_ggwithinstats(
-  Greater_Perth_JTW_by_DZ_car_as_driver,
+  data = Greater_Perth_JTW_by_DZ_car_as_driver, 
   x = census,
-  y = "Car, as driver",
-  type = "p",
-  grouping.var = grouping
-)
+  y = `Car, as driver`,  
+  grouping.var = grouping)
 
 p
-extract_stats(p)
+
 ```
+
+The box and violin plots show the differences in car, as driver mode shares between 2016 and 2021 for the various destination zones in the Heritage, North-south and Outer east groupings.  Changes in the car, as driver mode share by destination are significant for all three groupings, dropping from 69% to 67% for the Heritage grouping (p<0.01), from 68% to 67% for the North-south grouping (p<0.01), and from 69% to 68% for the Outer east grouping (p=0.03).
+
+That concludes the outline of the methods used in this analysis. The following section shows results for each group and each mode. 
+
+# 3.0 Results
+
+## 3.1 Heritage group
+### 3.1.1 Car, as driver
+
+```{r Heritage_car, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, Car, as driver mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Car, as driver`),     # fill by Car, as driver
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+
+In general, the car, as driver mode share has decreased across the Heritage area. The box and violin plot shows the difference in driver mode share by destination is significant, dropping from an average of 69% to 67% (p<0.01).
+
+```{r Heritage_reshow_car_as_driver_mode_share_stats, fig.margin=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, car driver mode share by destination zone, comparison between 2021 and 2016 censuses"}
+ 
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_car_as_driver %>% filter(grouping == "Heritage"), 
+  x = census,
+  y = `Car, as driver`)
+
+p
+
+
+```
+
+### 3.1.2 Car, as passenger
+
+
+```{r Heritage_car_passenger, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, Car, as passenger mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Car, as passenger`),     # fill by Car, as passenger
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+```{r Heritage_car_passenger_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, car as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+ 
+
+Greater_Perth_JTW_by_DZ_car_as_passenger_wider <- 
+  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
+    subset(select = c(dz_code, lga_name_2021, census, `Car, as passenger`, grouping)) %>%
+    filter(census != "Change: 2021 to 2016") %>% 
+    filter(!is.na(`Car, as passenger`)) %>%
+  pivot_wider(
+    names_from = census,
+    values_from = `Car, as passenger`
+  )
+
+#remove NA rows
+Greater_Perth_JTW_by_DZ_car_as_passenger_wider <- na.omit(Greater_Perth_JTW_by_DZ_car_as_passenger_wider)
+
+#return to long (tidy) format
+Greater_Perth_JTW_by_DZ_car_as_passenger <- pivot_longer(Greater_Perth_JTW_by_DZ_car_as_passenger_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Car, as passenger")
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_car_as_passenger %>% filter(grouping == "Heritage"), 
+  x = census,
+  y = `Car, as passenger`)
+
+p
+
+```
+
+ The box and violin plot shows that the change in car, as passenger mode share by destination is not significant (p=0.68), averaging at 4% in both 2016 and 2021. There does, however, appear to be some variability in change by location, but no clear pattern. 
+
+
+
+### 3.1.3 Train
+
+
+```{r Heritage_train, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Train`),     
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+
+```{r Heritage_Train_passenger_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+ 
+
+Greater_Perth_JTW_by_DZ_train_wider <- 
+  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
+    subset(select = c(dz_code, lga_name_2021, census, Train, grouping)) %>%
+    filter(census != "Change: 2021 to 2016") %>% 
+    filter(!is.na(Train)) %>%
+  pivot_wider(
+    names_from = census,
+    values_from = Train
+  )
+
+#remove NA rows
+Greater_Perth_JTW_by_DZ_train_wider <- na.omit(Greater_Perth_JTW_by_DZ_train_wider)
+
+#return to long (tidy) format
+Greater_Perth_JTW_by_DZ_train <- pivot_longer(Greater_Perth_JTW_by_DZ_train_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Train")
+                                                      
+p <- ggwithinstats(
+  data = Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage"), 
+  x = census,
+  y = `Train`)
+
+p
+
+```
+
+ The box and violin plot shows the change in train mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
+ 
+The maps might suggest that most of the change is in the central part of Perth, immediately in the 
+
+
+
+
+```{r Heritage_train_zoom_map, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
+
+#Map destination zones
+map <- Greater_Perth_JTW_by_DZ %>%
+  filter(grouping == "Heritage") %>%   #look at Heritage zone only
+  ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = `Train`),     
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() +
+  scale_fill_continuous(type = "viridis", labels=scales::percent) +
+  facet_grid(cols = vars(census), scales = "fixed")
+
+map
+
+```
+
+
+## 3.2 North-south group
+
+## 3.3 Outer east group
 
 
 # 4.0 Discussion
