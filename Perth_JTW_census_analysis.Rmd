@@ -170,7 +170,7 @@ Greater_Perth_JTW_by_destination_2021$Train <- as.numeric(Greater_Perth_JTW_by_d
 
 #update first column name to be dz_code_2016
 names(Greater_Perth_JTW_by_destination_2016) <- 
-  c("dz_code_2016", 
+  c("DZN_CODE_2016", 
     names(Greater_Perth_JTW_by_destination_2016[,2:ncol(Greater_Perth_JTW_by_destination_2016)]))
 #Do same update first column name to be dz_code_2021
 names(Greater_Perth_JTW_by_destination_2021) <- 
@@ -178,21 +178,35 @@ names(Greater_Perth_JTW_by_destination_2021) <-
     names(Greater_Perth_JTW_by_destination_2021[,2:ncol(Greater_Perth_JTW_by_destination_2021)]))
 
 
-#convert
+##convert 2016 zones into 2021 zones using the corrspondence file from the ABS
+#set so types are the same
+CG_DZN_2016_DZN_2021$DZN_CODE_2016 <- as.character(CG_DZN_2016_DZN_2021$DZN_CODE_2016)
+#join
+Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, CG_DZN_2016_DZN_2021, by = "DZN_CODE_2016")
+#multiply mode numbers by RATIO_FROM_TO value
+Greater_Perth_JTW_by_destination_2016[,25:40] <- Greater_Perth_JTW_by_destination_2016[,2:17] * Greater_Perth_JTW_by_destination_2016$RATIO_FROM_TO
+#Drop unneeded columns
+Greater_Perth_JTW_by_destination_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_destination_2016$DZN_CODE_2021, Greater_Perth_JTW_by_destination_2016[,25:40])
+
+
+Greater_Perth_JTW_by_destination_2016 %>% adorn_totals() %>% adorn_percentages() %>% tail(n=1)
+Greater_Perth_JTW_by_destination_2021 %>% adorn_totals() %>% adorn_percentages() %>% tail(n=1)
+
+
 
 #drop total column and convert to percentages
 Greater_Perth_JTW_by_destination_2016 <- tibble(Greater_Perth_JTW_by_destination_2016[,1:17] %>% adorn_percentages()) 
 Greater_Perth_JTW_by_destination_2021 <- tibble(Greater_Perth_JTW_by_destination_2021[,1:17] %>% adorn_percentages())
 
 # and join
-Greater_Perth_JTW_by_DZ2016_2016 <- right_join(DZ2016_map_data_joined_gcc, Greater_Perth_JTW_by_destination_2016, by = "dz_code_2016")
+Greater_Perth_JTW_by_DZ2016_2016 <- right_join(DZ2021_map_data_joined_gcc, Greater_Perth_JTW_by_destination_2016, by = "dz_code_2021")
 # and join
 Greater_Perth_JTW_by_DZ2021_2021 <- right_join(DZ2021_map_data_joined_gcc, Greater_Perth_JTW_by_destination_2021, by = "dz_code_2021")
 
 
 #Map destination zones
 map <- Greater_Perth_JTW_by_DZ2016_2016 %>%
-  filter(gcc_name_2016 == "Greater Perth") %>%   # let's just look at Perth
+  filter(gcc_name_2021 == "Greater Perth") %>%   # let's just look at Perth
   ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
               fill = `Car, as driver`),     # fill by car driver mode share
