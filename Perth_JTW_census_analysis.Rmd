@@ -33,6 +33,7 @@ library(janitor)
 library(scales)
 library(ggstatsplot)
 library(ggmap)
+library(knitr)
 
 # invalidate cache when the tufte version changes
 knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
@@ -40,56 +41,145 @@ options(htmltools.dir.version = FALSE)
 ```
 
 # 1.0 Introduction
-The Monash University Public Transport Research Group is looking at changes in travel behaviour in Perth surrounding the COVID-19 pandemic. Part of this work involves examining the Australian Bureau of Statistics (ABS) journey-to-work data for the 2016 and 2021 censuses. This working note details the process of collecting and reviewing the ABS data. It is structured as follows: the next section details the processing of the ABS data; Section 3 presents the results; followed by a brief discussion in Section 4; and conclusions in Section 5. 
+The Monash University Public Transport Research Group is looking at changes in travel behaviour in Perth surrounding the COVID-19 pandemic. Part of this work involves examining the Australian Bureau of Statistics (ABS) journey-to-work data for the 2016 and 2021 censuses. Areas of interest are: 
+
+- Aggregate Analysis for all of Greater Perth area
+
+- Disaggregate Area Analysis for the three areas of Perth definied in previous PTRG work^[See Graham's sample size jottings worksheet.]: the North-south Group ^[City of Melville, City of South Perth, City of Stirling, City of Joondalup, City of Wanneroo, City of Cockburn, City of Kwinana, City of Rockingham, City of Murray and City of Mandurah.], the Heritage Group ^[City of Bayswater, City of Belmont, City of Canning, City of Fremantle, City of Nedlands, City of Perth, City of Subiaco, City of Vincent, Shire of Peppermint Grove, Town of Bassendean, Town of Cambridge, Town of Claremont, Town of Cottesloe, Town of East Fremantle, Town of Mosman Park, Town of Victoria Park and City of Gosnells.] and the Outer east^[City of Kalamunda, City of Swan, Shire of Mundaring, City of Armadale, and Shire of Serpentine-Jarrahdale.].
+
+-	Perth CBD^[Using the WADoT Perth Greater CBD Transport Plan https://www.transport.wa.gov.au/mediaFiles/projects/PROJECT_I_Perth_Greater_CBD_Transport_Plan_map.pdf the Central Perth CBD generally consists of the 2021 Statistical Area 1 (SA1) zones of 50302129706, 50302129703, 50302129714, 50302129704, 50302129707, 50302129715, 50302129713, 50302129711, 50302129724, 50302129720, 50302129709, 50302129708, 50302129729, 50302129726 and 50302129722.] / Non-CBD-based Jobs 
+  - Aggregate Analysis: comparing journeys to the CBD with journeys not to the CBD.
+  - Disaggregate Spatial Analysis, again using the North-South, Heritage and Outer East groups. 
+
+
+This working note details the process of collecting and reviewing the ABS data. It is structured as follows: the next section details the processing of the ABS data; Section 3 presents the results; followed by a brief discussion in Section 4; and conclusions in Section 5. 
 
 # 2.0 Methods and data processing
-The census asks respondents about their journey-to-work mode choice and destination. Destinations are allocated to Destination Zones, which can be obtained using the ABS data manipulation package absmapsdata [@absmapsdata]^[See https://github.com/wfmackey/absmapsdata]. 
 
+The Journey-To-Work (JTW) data was extracted using the Table Builder on the ABS website. Data from 2016 and 2021 for Greater Perth was obtained. Join this with the Destination Zones allows mode shares to be mapped, as shown in the margin figure.
 
-```{r load_abs_data, echo=FALSE, message = FALSE, fig.margin=TRUE, fig.cap="Perth 2016 destination zonea", cache=TRUE}
+```{r load_abs_jtw_data, echo=FALSE, message = FALSE, warning=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
 
-#Load DZ2016 data
-DZ2016_map_data <- dz2016
+Greater_Perth_JTW_by_destination_2016 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2016.csv", 
+    skip = 8)
+Greater_Perth_JTW_by_destination_2021 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2021.csv", 
+    skip = 8)
 
-#Load SA1_2016 data
-sa1_2016_map_data <- sa12016
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- read_csv("01 data/Greater_Perth_SA1_UR_by_MTW15P_2016.csv", 
+    skip = 8)
 
-#Get the Greater Capital City names by sa2 
-sa2_gcc_code <- tibble(sa2_code_2016 = sa1_2016_map_data$sa2_code_2016,
-                       sa2_name_2016 = sa1_2016_map_data$sa2_name_2016,
-                       gcc_name_2016 = sa1_2016_map_data$gcc_name_2016)
-#and only keep unique records
-sa2_gcc_code <- distinct(sa2_gcc_code)
+Greater_Perth_SA1_UR_by_MTW15P_2021 <- read_csv("01 data/Greater_Perth_SA1_UR_by_MTW15P_2021.csv", 
+    skip = 8)
 
 
 
-#join gcc_name_2016 into DZ2016 dataset
-DZ2016_map_data_joined_gcc <- left_join(DZ2016_map_data, sa2_gcc_code, by = "sa2_code_2016")
+#remove first empty row and last 5 rows with copyright info
+Greater_Perth_JTW_by_destination_2016 <- Greater_Perth_JTW_by_destination_2016[2:(nrow(Greater_Perth_JTW_by_destination_2016)-5),]
+Greater_Perth_JTW_by_destination_2021<- Greater_Perth_JTW_by_destination_2021[2:(nrow(Greater_Perth_JTW_by_destination_2021)-5),]
+
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- Greater_Perth_SA1_UR_by_MTW15P_2016[2:(nrow(Greater_Perth_SA1_UR_by_MTW15P_2016)-5),]
+Greater_Perth_SA1_UR_by_MTW15P_2021 <- Greater_Perth_SA1_UR_by_MTW15P_2021[2:(nrow(Greater_Perth_SA1_UR_by_MTW15P_2021)-5),]
 
 
-#convert square km values back to numeric class
-DZ2016_map_data_joined_gcc$areasqkm_2016 <- as.numeric(DZ2016_map_data_joined_gcc$areasqkm_2016) 
+#Convert Train column to numeric
+Greater_Perth_JTW_by_destination_2016$Train <- as.numeric(Greater_Perth_JTW_by_destination_2016$Train)
+Greater_Perth_JTW_by_destination_2021$Train <- as.numeric(Greater_Perth_JTW_by_destination_2021$Train)
 
-#Map destination zones
-map <- DZ2016_map_data_joined_gcc %>%
-  filter(gcc_name_2016 == "Greater Perth") %>%   # let's just look at Perth
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = areasqkm_2016),     # fill by area size
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf()
 
-#map
+#update first column name to be dz_code_2016
+names(Greater_Perth_JTW_by_destination_2016) <- 
+  c("dz_code_2016", 
+    names(Greater_Perth_JTW_by_destination_2016[,2:ncol(Greater_Perth_JTW_by_destination_2016)]))
+#Do same update first column name to be dz_code_2021
+names(Greater_Perth_JTW_by_destination_2021) <- 
+  c("dz_code_2021", 
+    names(Greater_Perth_JTW_by_destination_2021[,2:ncol(Greater_Perth_JTW_by_destination_2021)]))
+#Update first column name to be SA1_CODE_2016
+names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- 
+  c("SA1_CODE_2016", 
+    names(Greater_Perth_SA1_UR_by_MTW15P_2016[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2016)]))
+#Update first column name to be SA1_CODE_2021
+names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- 
+  c("SA1_CODE_2021", 
+    names(Greater_Perth_SA1_UR_by_MTW15P_2021[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2021)]))
+
+
+
+#Drop unneeded columns
+Greater_Perth_JTW_by_destination_2016 <- tibble(Greater_Perth_JTW_by_destination_2016[,1:17])
+Greater_Perth_JTW_by_destination_2021 <- tibble(Greater_Perth_JTW_by_destination_2021[,1:17])
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2016[,1:17])
+Greater_Perth_SA1_UR_by_MTW15P_2021 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2021[,1:17])
+
 
 ```
 
 
-```{r load_abs_2021_destination_zones_data, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
+The ABS provides correspondence files to convert between 2016 and 2021 destination zones, and between 2016 and 2021 SA1 zones. 
+
+```{r load_abs_2021_2016_destination_zones_correspondence, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
+
+#Load DZ2021 to DZ2016 correspondence file
+CG_DZN_2016_DZN_2021 <- read_csv("01 data/CG_DZN_2016_DZN_2021.csv")
+CG_SA1_2016_SA1_2021 <- read_csv("01 data/CG_SA1_2016_SA1_2021.csv")
+
+##convert 2016 DZ zones into 2021 DZ zones using the correspondence file from the ABS
+#set so types are the same
+CG_DZN_2016_DZN_2021$DZN_CODE_2016 <- as.character(CG_DZN_2016_DZN_2021$DZN_CODE_2016)
+#Update first column name to be dz_code_2016 to match 
+names(CG_DZN_2016_DZN_2021) <- 
+  c("dz_code_2016", 
+    names(CG_DZN_2016_DZN_2021[,2:ncol(CG_DZN_2016_DZN_2021)]))
+
+#join
+Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, CG_DZN_2016_DZN_2021, by = "dz_code_2016")
+#multiply mode numbers by RATIO_FROM_TO value
+Greater_Perth_JTW_by_destination_2016[,22:37] <- Greater_Perth_JTW_by_destination_2016[,2:17] * Greater_Perth_JTW_by_destination_2016$RATIO_FROM_TO
+#Drop unneeded columns
+Greater_Perth_JTW_by_destination_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_destination_2016$DZN_CODE_2021, Greater_Perth_JTW_by_destination_2016[,22:37])
+
+
+##convert 2016 SA1 zones into 2021 SA1 zones using the corrspondence file from the ABS
+#For some reason the correspondence file provides SA1_MAINCODE_2016, rather than SA1_CODE_2016. The main code is a different number, but there is a correspondance in the SA1_2016_AUST file from https://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016?OpenDocument
+#So import that
+SA1_2016_AUST <- read_csv("01 data/SA1_2016_AUST.csv")
+
+#set so types are the same
+CG_SA1_2016_SA1_2021$SA1_MAINCODE_2016 <- as.character(CG_SA1_2016_SA1_2021$SA1_MAINCODE_2016)
+SA1_2016_AUST$SA1_MAINCODE_2016 <- as.character(SA1_2016_AUST$SA1_MAINCODE_2016)
+#join
+CG_SA1_2016_SA1_2021 <- left_join(CG_SA1_2016_SA1_2021, SA1_2016_AUST, by = "SA1_MAINCODE_2016")
+
+#set names the same
+names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- 
+  c("SA1_7DIGITCODE_2016", 
+    names(Greater_Perth_SA1_UR_by_MTW15P_2016[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2016)]))
+
+
+#again set so types are the same
+Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_7DIGITCODE_2016 <- as.character(Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_7DIGITCODE_2016)
+CG_SA1_2016_SA1_2021$SA1_7DIGITCODE_2016 <- as.character(CG_SA1_2016_SA1_2021$SA1_7DIGITCODE_2016)
+
+
+
+
+#Now join to the Journey to work data
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, CG_SA1_2016_SA1_2021, by = "SA1_7DIGITCODE_2016")
+
+#multiply mode numbers by RATIO_FROM_TO value
+Greater_Perth_SA1_UR_by_MTW15P_2016[,36:51] <- Greater_Perth_SA1_UR_by_MTW15P_2016[,2:17] * as.numeric(Greater_Perth_SA1_UR_by_MTW15P_2016$RATIO_FROM_TO)
+#Drop unneeded columns
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- tibble(SA1_CODE_2021 = Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_CODE_2021, Greater_Perth_SA1_UR_by_MTW15P_2016[,36:51])
+
+
+
+```
+
+Next, add the Heritage, North-south and Outer east groupings to the datasets. To do this, however, it is necessary to add the Local Government Areas (LGA) details to each dataset.  LGAs do not directly correspond to SA1 boundaries, so it will be necessary to 1. load the SA1 and DZ geometry to the journey to work datasets, 2. Load the LGA geometry, 3. Find the intersections of the LGA boundaries and the SA1s and the intersections of the LGA boundaries and the DZs.  
+
+First, loading the ABS mapping data via the absmapsdata package [@absmapsdata] gives:
+
+```{r load_absmapsdata_destination_zones_2021, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
 
 #Load DZ2021 data
 DZ2021_map_data <- dz2021
@@ -106,15 +196,13 @@ sa2_gcc_code <- distinct(sa2_gcc_code)
 
 
 #join gcc_name_2021 into DZ2021 dataset
-DZ2021_map_data_joined_gcc <- left_join(DZ2021_map_data, sa2_gcc_code, by = "sa2_code_2021")
+DZ2021_map_data <- left_join(DZ2021_map_data, sa2_gcc_code, by = "sa2_code_2021")
 
 #convert square km values back to numeric class
-DZ2021_map_data_joined_gcc$areasqkm_2021 <- as.numeric(DZ2021_map_data_joined_gcc$areasqkm_2021) 
-
-
+DZ2021_map_data$areasqkm_2021 <- as.numeric(DZ2021_map_data$areasqkm_2021) 
 
 #Map destination zones
-map <- DZ2021_map_data_joined_gcc %>%
+map <- DZ2021_map_data %>%
   filter(gcc_name_2021 == "Greater Perth") %>%   # let's just look at Perth
   ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
@@ -127,233 +215,49 @@ map <- DZ2021_map_data_joined_gcc %>%
   theme_void() +                    # clears other plot elements
   coord_sf()
 
-#map
+map
 
+#join destination zone geometry to destination zone JTW data
+Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, DZ2021_map_data, by = "dz_code_2021")
+Greater_Perth_JTW_by_destination_2021 <- left_join(Greater_Perth_JTW_by_destination_2021, DZ2021_map_data, by = "dz_code_2021")
 ```
 
-The ABS provides a correspondence file to convert between 2016 and 2021 destination zones. 
+```{r load_absmapsdata_SA1_zones_2021, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
 
-```{r load_abs_2021_2016_destination_zones_correspondence, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
-
-#Load DZ2021 to DZ2016 correspondence file
-CG_DZN_2016_DZN_2021 <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/CG_DZN_2016_DZN_2021.csv")
-
-
-```
-
-
-The Journey-To-Work (JTW) data was extracted using the Table Builder on the ABS website. Data from 2016 and 2021 for Greater Perth was obtained. Join this with the Destination Zones allows mode shares to be mapped, as shown in the margin figure.
-
-```{r load_abs_jtw_data, echo=FALSE, message = FALSE, warning=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
-
-Greater_Perth_JTW_by_destination_2016 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2016.csv", 
-    skip = 8)
-Greater_Perth_JTW_by_destination_2021 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2021.csv", 
-    skip = 8)
-Greater_Perth_JTW_by_origin_2016 <- read_csv("01 data/Greater_Perth_JTW_by_origin_2016.csv", 
-    skip = 8)
-Greater_Perth_JTW_by_origin_2021 <- read_csv("01 data/Greater_Perth_JTW_by_origin_2021.csv", 
-    skip = 8)
-
-
-
-#remove first empty row and last 5 rows with copywrite info
-Greater_Perth_JTW_by_destination_2016 <- Greater_Perth_JTW_by_destination_2016[2:(nrow(Greater_Perth_JTW_by_destination_2016)-5),]
-Greater_Perth_JTW_by_destination_2021<- Greater_Perth_JTW_by_destination_2021[2:(nrow(Greater_Perth_JTW_by_destination_2021)-5),]
-Greater_Perth_JTW_by_origin_2016 <- Greater_Perth_JTW_by_origin_2016[2:(nrow(Greater_Perth_JTW_by_origin_2016)-5),]
-Greater_Perth_JTW_by_origin_2021 <- Greater_Perth_JTW_by_origin_2021[2:(nrow(Greater_Perth_JTW_by_origin_2021)-5),]
-
-#Train column as numeric
-Greater_Perth_JTW_by_destination_2016$Train <- as.numeric(Greater_Perth_JTW_by_destination_2016$Train)
-Greater_Perth_JTW_by_destination_2021$Train <- as.numeric(Greater_Perth_JTW_by_destination_2021$Train)
-
-
-#update first column name to be dz_code_2016
-names(Greater_Perth_JTW_by_destination_2016) <- 
-  c("DZN_CODE_2016", 
-    names(Greater_Perth_JTW_by_destination_2016[,2:ncol(Greater_Perth_JTW_by_destination_2016)]))
-#Do same update first column name to be dz_code_2021
-names(Greater_Perth_JTW_by_destination_2021) <- 
-  c("dz_code_2021", 
-    names(Greater_Perth_JTW_by_destination_2021[,2:ncol(Greater_Perth_JTW_by_destination_2021)]))
-
-
-##convert 2016 zones into 2021 zones using the corrspondence file from the ABS
-#set so types are the same
-CG_DZN_2016_DZN_2021$DZN_CODE_2016 <- as.character(CG_DZN_2016_DZN_2021$DZN_CODE_2016)
-#join
-Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, CG_DZN_2016_DZN_2021, by = "DZN_CODE_2016")
-#multiply mode numbers by RATIO_FROM_TO value
-Greater_Perth_JTW_by_destination_2016[,25:40] <- Greater_Perth_JTW_by_destination_2016[,2:17] * Greater_Perth_JTW_by_destination_2016$RATIO_FROM_TO
-#Drop unneeded columns
-Greater_Perth_JTW_by_destination_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_destination_2016$DZN_CODE_2021, Greater_Perth_JTW_by_destination_2016[,25:40])
-
-
-Greater_Perth_JTW_by_destination_2016 %>% adorn_totals() %>% adorn_percentages() %>% tail(n=1)
-Greater_Perth_JTW_by_destination_2021 %>% adorn_totals() %>% adorn_percentages() %>% tail(n=1)
-
-
-
-#drop total column and convert to percentages
-Greater_Perth_JTW_by_destination_2016 <- tibble(Greater_Perth_JTW_by_destination_2016[,1:17] %>% adorn_percentages()) 
-Greater_Perth_JTW_by_destination_2021 <- tibble(Greater_Perth_JTW_by_destination_2021[,1:17] %>% adorn_percentages())
-
-# and join
-Greater_Perth_JTW_by_DZ2016_2016 <- right_join(DZ2021_map_data_joined_gcc, Greater_Perth_JTW_by_destination_2016, by = "dz_code_2021")
-# and join
-Greater_Perth_JTW_by_DZ2021_2021 <- right_join(DZ2021_map_data_joined_gcc, Greater_Perth_JTW_by_destination_2021, by = "dz_code_2021")
-
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ2016_2016 %>%
+#Map SA1 zones
+map <- sa1_2021_map_data %>%
   filter(gcc_name_2021 == "Greater Perth") %>%   # let's just look at Perth
   ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Car, as driver`),     # fill by car driver mode share
+              fill = areasqkm_2021),     # fill by area size
           lwd = 0,                  # remove borders
           show.legend = TRUE) +    # keep legend
  # geom_point(aes(cent_long,
   #               cent_lat),        # use the centroid long (x) and lats (y)
    #          colour = "white") +    # make the points white
   theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(labels=scales::percent)
-
+  coord_sf()
 
 map
 
 
+#set names the same
+names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- 
+  c("sa1_code_2021", 
+    names(Greater_Perth_SA1_UR_by_MTW15P_2016[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2016)]))
+names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- 
+  c("sa1_code_2021", 
+    names(Greater_Perth_SA1_UR_by_MTW15P_2021[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2021)]))
+
+
+
+
+#join destination zone geometry to destination zone JTW data
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, sa1_2021_map_data, by = "sa1_code_2021")
+Greater_Perth_SA1_UR_by_MTW15P_2021 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2021, sa1_2021_map_data, by = "sa1_code_2021")
 ```
 
-
-
-```{r shift_into_one_data_frame_and_calculate_differences, echo=FALSE, message= FALSE, warning=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
-
-#move 2016 data into combined dataframe
-Greater_Perth_JTW_by_DZ <- Greater_Perth_JTW_by_DZ2016_2016
-#strip 2016 from column names and match to 2021 column names
-names(Greater_Perth_JTW_by_DZ) <- c("dz_code", "sa2_code", "sa2_shortcode", "sa2_name.x", "state_code", "state_name",
-"areasqkm", "cent_lat", "cent_long", "sa2_name.y",  "gcc_name", "Train", "Bus", "Ferry", "Tram/light rail", "Taxi/ride-share service", "Car, as driver", "Car, as passenger", "Truck", "Motorbike/scooter", "Bicycle", "Walked only", "Other mode","Worked at home", "Did not got to work", "Not stated", "Not applicable", "geometry")
-
-#add census year identifier
-Greater_Perth_JTW_by_DZ$census <- "2016"
-
-#add 2021 as rows to the combined dataframe
-Greater_Perth_JTW_by_DZ <- Greater_Perth_JTW_by_DZ %>% add_row(
-  dz_code = Greater_Perth_JTW_by_DZ2021_2021$dz_code_2021, 
-  sa2_code = Greater_Perth_JTW_by_DZ2021_2021$sa2_code_2021, 
-  sa2_shortcode = NA, 
-  sa2_name.x = Greater_Perth_JTW_by_DZ2021_2021$sa2_name_2021.x, 
-  state_code = Greater_Perth_JTW_by_DZ2021_2021$state_code_2021, 
-  state_name = Greater_Perth_JTW_by_DZ2021_2021$state_name_2021, 
-  areasqkm = Greater_Perth_JTW_by_DZ2021_2021$areasqkm_2021,
-  cent_lat = Greater_Perth_JTW_by_DZ2021_2021$cent_lat,
-  cent_long = Greater_Perth_JTW_by_DZ2021_2021$cent_long,
-  sa2_name.y = Greater_Perth_JTW_by_DZ2021_2021$sa2_name_2021.y,
-  gcc_name = Greater_Perth_JTW_by_DZ2021_2021$gcc_name_2021,
-  Train = Greater_Perth_JTW_by_DZ2021_2021$Train,
-  Bus = Greater_Perth_JTW_by_DZ2021_2021$Bus,
-  Ferry = Greater_Perth_JTW_by_DZ2021_2021$Ferry,
-  `Tram/light rail` = Greater_Perth_JTW_by_DZ2021_2021$`Tram/light rail`,
-  `Taxi/ride-share service` = Greater_Perth_JTW_by_DZ2021_2021$`Taxi/ride-share service`,
-  `Car, as driver` = Greater_Perth_JTW_by_DZ2021_2021$`Car, as driver`,
-  `Car, as passenger` = Greater_Perth_JTW_by_DZ2021_2021$`Car, as passenger`,
-  Truck = Greater_Perth_JTW_by_DZ2021_2021$Truck,
-  `Motorbike/scooter` = Greater_Perth_JTW_by_DZ2021_2021$`Motorbike/scooter`,
-  Bicycle = Greater_Perth_JTW_by_DZ2021_2021$Bicycle,
-  `Walked only` = Greater_Perth_JTW_by_DZ2021_2021$`Walked only`,
-  `Other mode` = Greater_Perth_JTW_by_DZ2021_2021$`Other Mode`,
-  `Worked at home` = Greater_Perth_JTW_by_DZ2021_2021$`Worked at home`,
-  `Did not got to work` = Greater_Perth_JTW_by_DZ2021_2021$`Did not go to work`,
-  `Not stated` = Greater_Perth_JTW_by_DZ2021_2021$`Not stated`,
-  `Not applicable` = Greater_Perth_JTW_by_DZ2021_2021$`Not applicable`,
-  geometry = Greater_Perth_JTW_by_DZ2021_2021$geometry,
-  census = "2021")
-                
-##create a dataframe that has the difference between the 2021 and 2016 mode shares, by 2021 DZ code
-#first insert 2016 data
-Greater_Perth_JTW_by_destination_2021_minus_2016 <-Greater_Perth_JTW_by_destination_2016
-#change column names to distinguish between 2021 and 2016, and to match 2021 Dz codes to 2016 Dz codes
-names(Greater_Perth_JTW_by_destination_2021_minus_2016) <- c(
-  "dz_code_2021", 
-  "Train_2016", 
-  "Bus_2016", 
-  "Ferry_2016", 
-  "Tram/light rail_2016", 
-  "Taxi/ride-share service_2016", 
-  "Car, as driver_2016", 
-  "Car, as passenger_2016", 
-  "Truck_2016", 
-  "Motorbike/scooter_2016", 
-  "Bicycle_2016", 
-  "Walked only_2016", 
-  "Other mode_2016",
-  "Worked at home_2016", 
-  "Did not got to work_2016", 
-  "Not stated_2016", 
-  "Not applicable_2016")
-#join based on Dz code
-Greater_Perth_JTW_by_destination_2021_minus_2016 <- left_join(Greater_Perth_JTW_by_destination_2021_minus_2016, Greater_Perth_JTW_by_destination_2021)
-#subtract 2016 from 2021
-Greater_Perth_JTW_by_destination_2021_minus_2016$Train <- Greater_Perth_JTW_by_destination_2021_minus_2016$Train - Greater_Perth_JTW_by_destination_2021_minus_2016$Train_2016
-Greater_Perth_JTW_by_destination_2021_minus_2016$Bus <- Greater_Perth_JTW_by_destination_2021_minus_2016$Bus - Greater_Perth_JTW_by_destination_2021_minus_2016$Bus_2016
-Greater_Perth_JTW_by_destination_2021_minus_2016$Ferry <- Greater_Perth_JTW_by_destination_2021_minus_2016$Ferry - Greater_Perth_JTW_by_destination_2021_minus_2016$Ferry_2016
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Tram/light rail` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Tram/light rail` - Greater_Perth_JTW_by_destination_2021_minus_2016$`Tram/light rail_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Taxi/ride-share service` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Taxi/ride-share service` -  Greater_Perth_JTW_by_destination_2021_minus_2016$`Taxi/ride-share service_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as driver` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as driver` - Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as driver_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as passenger` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as passenger`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as passenger_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$Truck <- Greater_Perth_JTW_by_destination_2021_minus_2016$Truck- Greater_Perth_JTW_by_destination_2021_minus_2016$Truck_2016
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Motorbike/scooter` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Motorbike/scooter`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Motorbike/scooter_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$Bicycle <- Greater_Perth_JTW_by_destination_2021_minus_2016$Bicycle- Greater_Perth_JTW_by_destination_2021_minus_2016$Bicycle_2016
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Other Mode` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Other Mode`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Other mode_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Walked only` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Walked only`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Walked only_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Worked at home` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Worked at home`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Worked at home_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Did not go to work` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Did not go to work`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Did not got to work_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Not stated` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Not stated`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Not stated_2016`
-Greater_Perth_JTW_by_destination_2021_minus_2016$`Not applicable` <- Greater_Perth_JTW_by_destination_2021_minus_2016$`Not applicable`- Greater_Perth_JTW_by_destination_2021_minus_2016$`Not applicable_2016`
-
-#join difference between 2021 and 2016 to DZ geometry
-Greater_Perth_JTW_by_destination_2021_minus_2016 <- right_join(DZ2021_map_data_joined_gcc, Greater_Perth_JTW_by_destination_2021_minus_2016, by = "dz_code_2021")
-
-
-#add difference between 2021 and 2016 as rows to the combined dataframe
-Greater_Perth_JTW_by_DZ <- Greater_Perth_JTW_by_DZ %>% add_row(
-  dz_code = Greater_Perth_JTW_by_destination_2021_minus_2016$dz_code_2021, 
-  sa2_code = Greater_Perth_JTW_by_destination_2021_minus_2016$sa2_code_2021, 
-  sa2_shortcode = NA, 
-  sa2_name.x = Greater_Perth_JTW_by_destination_2021_minus_2016$sa2_name_2021.x, 
-  state_code = Greater_Perth_JTW_by_destination_2021_minus_2016$state_code_2021, 
-  state_name = Greater_Perth_JTW_by_destination_2021_minus_2016$state_name_2021, 
-  areasqkm = Greater_Perth_JTW_by_destination_2021_minus_2016$areasqkm_2021,
-  cent_lat = Greater_Perth_JTW_by_destination_2021_minus_2016$cent_lat,
-  cent_long = Greater_Perth_JTW_by_destination_2021_minus_2016$cent_long,
-  sa2_name.y = Greater_Perth_JTW_by_destination_2021_minus_2016$sa2_name_2021.y,
-  gcc_name = Greater_Perth_JTW_by_destination_2021_minus_2016$gcc_name_2021,
-  Train = Greater_Perth_JTW_by_destination_2021_minus_2016$Train,
-  Bus = Greater_Perth_JTW_by_destination_2021_minus_2016$Bus,
-  Ferry = Greater_Perth_JTW_by_destination_2021_minus_2016$Ferry,
-  `Tram/light rail` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Tram/light rail`,
-  `Taxi/ride-share service` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Taxi/ride-share service`,
-  `Car, as driver` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as driver`,
-  `Car, as passenger` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Car, as passenger`,
-  Truck = Greater_Perth_JTW_by_destination_2021_minus_2016$Truck,
-  `Motorbike/scooter` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Motorbike/scooter`,
-  Bicycle = Greater_Perth_JTW_by_destination_2021_minus_2016$Bicycle,
-  `Walked only` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Walked only`,
-  `Other mode` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Other Mode`,
-  `Worked at home` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Worked at home`,
-  `Did not got to work` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Did not go to work`,
-  `Not stated` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Not stated`,
-  `Not applicable` = Greater_Perth_JTW_by_destination_2021_minus_2016$`Not applicable`,
-  geometry = Greater_Perth_JTW_by_destination_2021_minus_2016$geometry,
-  census = "Change: 2021 to 2016")
- 
-
-
-```
-
-Next, the Greater Perth area is divided into the analysis areas defined in Graham's sample size jottings worksheet. These are the North-South Group ^[City of Melville, City of South Perth, City of Stirling, City of Joondalup, City of Wanneroo, City of Cockburn, City of Kwinana, City of Rockingham, City of Murray and City of Mandurah.], the Heritage Group ^[City of Bayswater, City of Belmont, City of Canning, City of Fremantle, City of Nedlands, City of Perth, City of Subiaco, City of Vincent, Shire of Peppermint Grove, Town of Bassendean, Town of Cambridge, Town of Claremont, Town of Cottesloe, Town of East Fremantle, Town of Mosman Park, Town of Victoria Park and City of Gosnells.] and the Outer East^[City of Kalamunda, City of Swan, Shire of Mundaring, City of Armadale, and Shire of Serpentine-Jarrahdale.].
-
+Next get the LGA boundaries, find intersections with JTW dataset geometries, and assign the goupings into the dataset..
 
 
 ```{r add_groupings, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
@@ -361,8 +265,23 @@ Next, the Greater Perth area is divided into the analysis areas defined in Graha
 #get ABS LGA boundaries
 lga_areas <- lga2021 %>% filter(state_name_2021 == "Western Australia")
 
-#find intersections of Destination zones and LGA boundaries
-Greater_Perth_JTW_by_DZ <- st_intersection(Greater_Perth_JTW_by_DZ, lga_areas)
+
+#turn JTW datasets into sf objected
+Greater_Perth_JTW_by_destination_2016 <- st_sf(Greater_Perth_JTW_by_destination_2016)
+Greater_Perth_JTW_by_destination_2021 <- st_sf(Greater_Perth_JTW_by_destination_2021)
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- st_sf(Greater_Perth_SA1_UR_by_MTW15P_2016)
+Greater_Perth_SA1_UR_by_MTW15P_2021 <- st_sf(Greater_Perth_SA1_UR_by_MTW15P_2021)
+
+
+
+
+#find intersections of SA1 and LGA and DZ and LGA boundaries
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- st_intersection(Greater_Perth_SA1_UR_by_MTW15P_2016, lga_areas)
+Greater_Perth_SA1_UR_by_MTW15P_2021 <- st_intersection(Greater_Perth_SA1_UR_by_MTW15P_2016, lga_areas)
+Greater_Perth_JTW_by_destination_2016 <- st_intersection(Greater_Perth_JTW_by_destination_2016, lga_areas)
+Greater_Perth_JTW_by_destination_2021 <- st_intersection(Greater_Perth_JTW_by_destination_2021, lga_areas)
+
+
 
 LGA_to_group <- tibble(lga_name_2021 = 
 c("Melville", "South Perth", "Stirling", "Joondalup", "Wanneroo", "Cockburn", "Kwinana", "Rockingham", "Murray", "Mandurah",
@@ -371,12 +290,24 @@ c("Melville", "South Perth", "Stirling", "Joondalup", "Wanneroo", "Cockburn", "K
 grouping = c("North-south", "North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south", "Heritage", "Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage", "Outer east", "Outer east","Outer east","Outer east","Outer east")
 )
 
-#join grouping to DZ
-Greater_Perth_JTW_by_DZ <- left_join(Greater_Perth_JTW_by_DZ, LGA_to_group, by = "lga_name_2021")
-   
+#join grouping to JTW data frames
+Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, LGA_to_group, by = "lga_name_2021")
+Greater_Perth_JTW_by_destination_2021 <- left_join(Greater_Perth_JTW_by_destination_2021, LGA_to_group, by = "lga_name_2021")
+Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, LGA_to_group, by = "lga_name_2021")
+Greater_Perth_SA1_UR_by_MTW15P_2021 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2021, LGA_to_group, by = "lga_name_2021")
+
+
+#fix names
+names(Greater_Perth_JTW_by_destination_2016) <- c("dz_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "sa2_name_2021.y", "sa2_name_2021.y", "gcc_name_2021", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "geometry", "grouping")
+
+names(Greater_Perth_JTW_by_destination_2021) <- c("dz_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "sa2_name_2021.y", "sa2_name_2021.y", "gcc_name_2021", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "geometry", "grouping")
+
+names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- c("sa1_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "sa3_code_2021", "sa3_name_2021", "sa4_code_2021", "sa4_name_2021", "gcc_code_2021", "gcc_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "geometry", "grouping")
+names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- c("sa1_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "sa3_code_2021", "sa3_name_2021", "sa4_code_2021", "sa4_name_2021", "gcc_code_2021", "gcc_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "lga_code_2021.1", "lga_name_2021.1", "state_code_2021.2", "state_name_2021.2", "areasqkm_2021.2", "cent_lat.2", "cent_long.2", "geometry", "grouping")
+
 
 #Map Groupings
-map <- Greater_Perth_JTW_by_DZ %>%
+map <- Greater_Perth_SA1_UR_by_MTW15P_2016 %>%
     ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
               fill = grouping),     # fill by grouping
@@ -389,572 +320,122 @@ map <- Greater_Perth_JTW_by_DZ %>%
   coord_sf() 
 
 map 
-#+ qmap(location = "Perth")
 
-#Somewhere along the way the column names where changed to have . rather than spaces, let's change that back
-
-names(Greater_Perth_JTW_by_DZ) <- c("dz_code", "sa2_code", "sa2_shortcode", "sa2_name.x", "state_code", "state_name", "areadsqkm", "cent_lat", "cent_long", "sa2_name.y", "gcc_name", "Train", "Bus", "Ferry", "Tram or light rail", "Taxi or ride share service", "Car, as driver", "Car, as passenger", "Truck", "Motorbike or scooter", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "census", "lga_code_2021", "lga_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat.1", "cent_long.1", "grouping", "geometry")
 
                       
 ```
 
-This now allows the Hertiage, North-South and Outer East groups to be plotted separated and compared. 
 
-```{r all_zones_car_as_driver, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Comparing car, as driver mode shares across 2016 and 2021, and the three groupings"}
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(census != "Change: 2021 to 2016") %>%  #look at 2016 and 2021, but not the change.
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Car, as driver`),     # fill by Car, as driver
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(row = vars(census), cols = vars(grouping), scales = "fixed")
-
-map
-
-```
-
-Some changes are apparent. However, showing the differences between 2021 and 2016 directly gives: 
-
-
-```{r difference_in_car_as_driver_mode_share, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.cap="Car, as driver mode shares, difference between 2021 and 2016"}
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(census == "Change: 2021 to 2016") %>%  #look at differnce between 2021 and 2016 only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Car, as driver`),     # fill by Car, as driver
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
- facet_grid(cols = vars(grouping), scales = "fixed")
-
-
-map
-
-```
-
-It appears that the largest changes have been in the outer east. Looking at the stats using the ggstatsplot package^[See https://indrajeetpatil.github.io/ggstatsplot/articles/web_only/ggwithinstats.html][@ggstatsplot]  
-
-
-```{r difference_in_car_as_driver_mode_share_stats_tests, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, car driver mode share by destination zone, comparison between 2021 and 2016 censuses"}
-
-Greater_Perth_JTW_by_DZ_no_geometry <- tibble(st_drop_geometry(Greater_Perth_JTW_by_DZ))
-  
-Greater_Perth_JTW_by_DZ_car_as_driver_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, `Car, as driver`, grouping)) %>%
-    filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(`Car, as driver`)) %>%
-  pivot_wider(
-    names_from = census,
-    values_from = `Car, as driver`
-  )
-
-#remove NA rows
-Greater_Perth_JTW_by_DZ_car_as_driver_wider <- na.omit(Greater_Perth_JTW_by_DZ_car_as_driver_wider)
-
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_car_as_driver <- pivot_longer(Greater_Perth_JTW_by_DZ_car_as_driver_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Car, as driver")
-                                                      
-p <- grouped_ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_car_as_driver, 
-  x = census,
-  y = `Car, as driver`,  
-  grouping.var = grouping)
-
-p
-
-```
-
-The box and violin plots show the differences in car, as driver mode shares between 2016 and 2021 for the various destination zones in the Heritage, North-south and Outer east groupings.  Changes in the car, as driver mode share by destination are significant for all three groupings, dropping from 69% to 67% for the Heritage grouping (p<0.01), from 68% to 67% for the North-south grouping (p<0.01), and from 69% to 68% for the Outer east grouping (p=0.03).
-
-That concludes the outline of the methods used in this analysis. The following section shows results for each group and each mode. 
 
 # 3.0 Results
 
-## 3.1 Heritage group
-### 3.1.1 Car, as driver
+## 3.1 Aggregate for Greater Perth
+```{r Greater_Perth_JTW_aggregate, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses"}
 
-```{r Heritage_car, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, Car, as driver mode shares; 2016, 2021 and difference"}
+Greater_Perth_JTW_by_destination_2016_no_geometry <- Greater_Perth_JTW_by_destination_2016 %>% st_drop_geometry()
+Greater_Perth_JTW_by_destination_2021_no_geometry <- Greater_Perth_JTW_by_destination_2021 %>% st_drop_geometry()
+Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry <- Greater_Perth_SA1_UR_by_MTW15P_2016 %>% st_drop_geometry()
+Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry <- Greater_Perth_SA1_UR_by_MTW15P_2021 %>% st_drop_geometry()
 
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Car, as driver`),     # fill by Car, as driver
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
+#calculate aggregates for everyone with a usual residence in perth
+Aggregate_JTW_2016_2021 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry[,1:17] %>% adorn_totals() %>% tail(n=1))
+Aggregate_JTW_2016_2021 <- add_row(Aggregate_JTW_2016_2021, Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry[,1:17] %>% adorn_totals() %>% tail(n=1))
 
-map
+Aggregate_JTW_2016_2021$Year <- c("2016", "2021")
 
-```
+#combine modes to obtain PT, private vehicle (drive), private vehicle (passenger)  and non-motorised columns
+Aggregate_JTW_2016_2021$`Private vehicle (drive)` <- Aggregate_JTW_2016_2021$`Car, as driver` + Aggregate_JTW_2016_2021$Truck + Aggregate_JTW_2016_2021$Motorbike  
 
-In general, the car, as driver mode share has decreased across the Heritage area. The box and violin plot shown above (end of Section 2.0, left figure) the difference in driver mode share by destination is significant, dropping from an average of 69% to 67% (p<0.01).
-<!--
-```{r Heritage_reshow_car_as_driver_mode_share_stats, fig.margin=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, car driver mode share by destination zone, comparison between 2021 and 2016 censuses"}
- 
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_car_as_driver %>% filter(grouping == "Heritage"), 
-  x = census,
-  y = `Car, as driver`)
+Aggregate_JTW_2016_2021$`Private vehicle (passenger)` <- Aggregate_JTW_2016_2021$`Car, as passenger` + Aggregate_JTW_2016_2021$Taxi  
 
-p
+Aggregate_JTW_2016_2021$Transit <- Aggregate_JTW_2016_2021$Train + Aggregate_JTW_2016_2021$Bus + Aggregate_JTW_2016_2021$Ferry + Aggregate_JTW_2016_2021$Tram
 
+Aggregate_JTW_2016_2021$`Non-motorised` <- Aggregate_JTW_2016_2021$Bicycle + Aggregate_JTW_2016_2021$`Walked only`
 
-```
---->
+#Round all to whole number of people (as correspondence to convert 2016 to 2021 SA1s resulted in some fractional people)
+Aggregate_JTW_2016_2021 <-Aggregate_JTW_2016_2021 %>% mutate_if(is.numeric, round, digits = 0)
 
-### 3.1.2 Car, as passenger
+#pivot_longer 
+Aggregate_JTW_2016_2021_summary_longer <- pivot_longer(
+  Aggregate_JTW_2016_2021[, c("Year", "Private vehicle (drive)", "Private vehicle (passenger)", "Transit", "Non-motorised", "Other mode", "Worked at home")], 
+  cols = c("Private vehicle (drive)", "Private vehicle (passenger)", "Transit", "Non-motorised", "Other mode", "Worked at home"), 
+  names_to = "Mode or activity",
+  values_to = "People"
+)
 
+#Round to whole number of people (as the correspondence to convert 2016 to 2021 SA1s resulted in some fractional people)
+#Aggregate_JTW_2016_2021_summary_longer$People <- round(Aggregate_JTW_2016_2021_summary_longer$People, digits = 0)
 
-```{r Heritage_car_passenger, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, Car, as passenger mode shares; 2016, 2021 and difference"}
+#turn mode into a factor to get a specific order
+Aggregate_JTW_2016_2021_summary_longer$`Mode or activity` <- factor( Aggregate_JTW_2016_2021_summary_longer$`Mode or activity`, levels = c("Worked at home", "Other mode", "Non-motorised", "Transit", "Private vehicle (passenger)", "Private vehicle (drive)"))
 
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Car, as passenger`),     # fill by Car, as passenger
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
-
-map
-
-```
-
-
-```{r Heritage_car_passenger_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, car as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
- 
-
-Greater_Perth_JTW_by_DZ_car_as_passenger_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, `Car, as passenger`, grouping)) %>%
-    filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(`Car, as passenger`)) %>%
-  pivot_wider(
-    names_from = census,
-    values_from = `Car, as passenger`
-  )
-
-#remove NA rows
-Greater_Perth_JTW_by_DZ_car_as_passenger_wider <- na.omit(Greater_Perth_JTW_by_DZ_car_as_passenger_wider)
-
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_car_as_passenger <- pivot_longer(Greater_Perth_JTW_by_DZ_car_as_passenger_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Car, as passenger")
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_car_as_passenger %>% filter(grouping == "Heritage"), 
-  x = census,
-  y = `Car, as passenger`)
+p <- ggbarstats(
+  Aggregate_JTW_2016_2021_summary_longer[,], 
+  x = `Mode or activity`,
+  y = Year,
+  counts = People
+)
 
 p
 
-```
-
- The box and violin plot shows that the change in car, as passenger mode share by destination is not significant (p=0.68), averaging at 4% in both 2016 and 2021. There does, however, appear to be some variability in change by location, but no clear pattern. 
-
-
-
-### 3.1.3 Train
-
-
-```{r Heritage_train, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Train`),     
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
-
-map
+kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Private vehicle (drive)", "Private vehicle (passenger)", "Transit", "Non-motorised", "Other mode", "Worked at home")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses"
+)
 
 ```
+The changes in mode/activity share are small, but statistically significant `r extract_caption(p)`. 
 
-```{r Heritage_Train_passenger_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
- 
+```{r Greater_Perth_JTW_aggregate_transit, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses, transit modes"}
 
-Greater_Perth_JTW_by_DZ_train_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, Train, grouping)) %>%
-    filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(Train)) %>%
-  pivot_wider(
-    names_from = census,
-    values_from = Train
-  )
+#pivot_longer 
+Aggregate_JTW_2016_2021_transit_longer <- pivot_longer(
+  Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus", "Tram", "Ferry")], 
+  cols = c("Train", "Bus", "Tram", "Ferry"), 
+  names_to = "Mode",
+  values_to = "People"
+)
 
-#remove NA rows
-Greater_Perth_JTW_by_DZ_train_wider <- na.omit(Greater_Perth_JTW_by_DZ_train_wider)
+#Round to whole number of people (as the correspondence to convert 2016 to 2021 SA1s resulted in some fractional people)
+#Aggregate_JTW_2016_2021_summary_longer$People <- round(Aggregate_JTW_2016_2021_summary_longer$People, digits = 0)
 
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_train <- pivot_longer(Greater_Perth_JTW_by_DZ_train_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Train")
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage"), 
-  x = census,
-  y = `Train`)
+#turn mode into a factor to get a specific order
+Aggregate_JTW_2016_2021_transit_longer$`Mode` <- factor( Aggregate_JTW_2016_2021_transit_longer$`Mode`, levels = c("Ferry", "Tram", "Bus", "Train"))
+
+p <- ggbarstats(
+  Aggregate_JTW_2016_2021_transit_longer[,], 
+  x = `Mode`,
+  y = Year,
+  counts = People
+)
 
 p
 
+kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus", "Tram", "Ferry")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses, transit modes"
+)
+
 ```
 
- The box and violin plot shows the change in train mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_train %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
- 
+The changes in mode/activity share are small, but statistically significant `r extract_caption(p)`. 
 
-From the maps it appears that most of the train commuting is destined for the centre of Perth. Zooming in on the City of Perth gives:
- 
+## 3.2 Disaggregate (Heritage, N-S, Outer east)
 
-```{r City_of_Perth_train_zoom_map, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
+```{r Greater_Perth_JTW_disaggregate, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses"}
 
+Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry, grouping = Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry$grouping)
 
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(lga_name_2021 == "Perth") %>%  
-  filter(census != "Change: 2021 to 2016") %>%#look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Train`),     
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
-
-map
-
-
+Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry, grouping = Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry$grouping)
 
 ```
 
 
-```{r City_of_Perth_Train_passenger_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
+## 3.3 CBD vs non-CBD
 
+## 3.3.1 Aggregate for Greater Perth
 
+## 3.3.2 Disaggregate (Heritage, N-S, Outer east)
 
-Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry %>%
-  filter(lga_name_2021 == "Perth") %>%  
-  filter(census != "Change: 2021 to 2016") %>%#look at Heritage zone only
-    subset(select = c(dz_code, lga_name_2021, census, Train, grouping)) %>%
-    filter(!is.na(Train)) %>%
-  pivot_wider(
-    names_from = "census",
-    values_from = "Train"
-  )
 
-#appears that the zone codes have changed for central Perth between 2016 and 2021
 
-#remove NA rows
-Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider <- na.omit(Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider)
-
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_train_Perth_LGA <- pivot_longer(Greater_Perth_JTW_by_DZ_train_Perth_LGA_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Train")
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_train_Perth_LGA, 
-  x = census,
-  y = `Train`)
-
-p
- 
-```
-
- The box and violin plot shows the change in train mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_train %>% filter(lga_name_2021 == "Perth") %>% filter(census == "2016") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_train %>% filter(lga_name_2021 == "Perth") %>% filter(census == "2021") %>% subset(select="Train") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
- 
-
-
-
-### 3.1.3 Bus
-
-
-```{r Heritage_bus, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Bus`),     
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
-
-map
-
-```
-
-```{r Heritage_bus_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
- 
-
-Greater_Perth_JTW_by_DZ_bus_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, Bus, grouping)) %>%
-    filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(Bus)) %>%
-  pivot_wider(
-    names_from = census,
-    values_from = Bus
-  )
-
-#remove NA rows
-Greater_Perth_JTW_by_DZ_bus_wider <- na.omit(Greater_Perth_JTW_by_DZ_bus_wider)
-
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_bus <- pivot_longer(Greater_Perth_JTW_by_DZ_bus_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Bus")
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_bus %>% filter(grouping == "Heritage"), 
-  x = census,
-  y = Bus)
-
-p
-
-```
-
- The box and violin plot shows the change in bus mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_bus %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Bus") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_bus %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Bus") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
- 
-
-
-
-
-### 3.1.3 Bicycle
-
-
-```{r Heritage_Bicycle, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Bicycle`),     
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
-
-map
-
-```
-
-```{r Heritage_Bicycle_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
- 
-
-Greater_Perth_JTW_by_DZ_Bicycle_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, Bicycle, grouping)) %>%
-    filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(Bicycle)) %>%
-  pivot_wider(
-    names_from = census,
-    values_from = Bicycle
-  )
-
-#remove NA rows
-Greater_Perth_JTW_by_DZ_Bicycle_wider <- na.omit(Greater_Perth_JTW_by_DZ_Bicycle_wider)
-
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_Bicycle <- pivot_longer(Greater_Perth_JTW_by_DZ_Bicycle_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Bicycle")
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_Bicycle %>% filter(grouping == "Heritage"), 
-  x = census,
-  y = Bicycle)
-
-p
-
-```
-
- The box and violin plot shows the change in Bicycle mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_Bicycle %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Bicycle") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_Bicycle %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Bicycle") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
- 
-
-
-
-
-
-
-### 3.1.3 Walked
-
-
-```{r Heritage_Walked, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Walked only`),     
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
-
-map
-
-```
-
-```{r Heritage_Walked_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
- 
-
-Greater_Perth_JTW_by_DZ_Walked_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, `Walked only`, grouping)) %>%
-    filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(`Walked only`)) %>%
-  pivot_wider(
-    names_from = census,
-    values_from = `Walked only`
-  )
-
-#remove NA rows
-Greater_Perth_JTW_by_DZ_Walked_wider <- na.omit(Greater_Perth_JTW_by_DZ_Walked_wider)
-
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_Walked <- pivot_longer(Greater_Perth_JTW_by_DZ_Walked_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Walked only")
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_Walked %>% filter(grouping == "Heritage"), 
-  x = census,
-  y = "Walked only")
-
-p
-
-```
-
- The box and violin plot shows the change in walking mode share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_Walked %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Walked only") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_Walked %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Walked only") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
- 
-
-
-
-
-
-
-### 3.1.3 Worked at home
-
-
-```{r Heritage_WFH, echo=FALSE, message=FALSE, warning=FALSE, fig.fullwidth=TRUE, fig.margin=FALSE, fig.cap="Heritage group, train mode shares; 2016, 2021 and difference"}
-
-#Map destination zones
-map <- Greater_Perth_JTW_by_DZ %>%
-  filter(grouping == "Heritage") %>%   #look at Heritage zone only
-  ggplot() +
-  geom_sf(aes(geometry = geometry,  # use the geometry variable
-              fill = `Worked at home`),     
-          lwd = 0,                  # remove borders
-          show.legend = TRUE) +    # keep legend
- # geom_point(aes(cent_long,
-  #               cent_lat),        # use the centroid long (x) and lats (y)
-   #          colour = "white") +    # make the points white
-  theme_void() +                    # clears other plot elements
-  coord_sf() +
-  scale_fill_continuous(type = "viridis", labels=scales::percent) +
-  facet_grid(cols = vars(census), scales = "fixed")
-
-map
-
-```
-
-```{r Heritage_WFH_stats, fig.margin=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Heritage group, train as passenger mode share by destination zone, comparison between 2021 and 2016 censuses"}
- 
-
-Greater_Perth_JTW_by_DZ_WFH_wider <- 
-  Greater_Perth_JTW_by_DZ_no_geometry  %>% 
-    subset(select = c(dz_code, lga_name_2021, census, `Worked at home`,
-                      grouping)) %>%
-    filter(census != "Change: 2021 to 2016") %>% 
-    filter(!is.na(`Worked at home`)) %>%
-  pivot_wider(
-    names_from = census,
-    values_from = `Worked at home`
-  )
-
-#remove NA rows
-Greater_Perth_JTW_by_DZ_WFH_wider <- na.omit(Greater_Perth_JTW_by_DZ_WFH_wider)
-
-#return to long (tidy) format
-Greater_Perth_JTW_by_DZ_WFH <- pivot_longer(Greater_Perth_JTW_by_DZ_WFH_wider, cols = c("2016", "2021"), names_to = "census", values_to = "Worked at home")
-                                                      
-p <- ggwithinstats(
-  data = Greater_Perth_JTW_by_DZ_WFH %>% filter(grouping == "Heritage"), 
-  x = census,
-  y = `Worked at home`)
-
-p
-
-```
-
- The box and violin plot shows the change in WFH (mode) share by destination is small, but significant (p<0.01). The average is `r Greater_Perth_JTW_by_DZ_WFH %>% filter(grouping == "Heritage") %>% filter(census == "2016") %>% subset(select="Worked at home") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2016, but `r Greater_Perth_JTW_by_DZ_WFH %>% filter(grouping == "Heritage") %>% filter(census == "2021") %>% subset(select="Worked at home") %>% sapply(mean) %>% percent(accuracy=0.1)` in 2021. 
- 
-
-
-
-
-## 3.2 North-south group
-
-## 3.3 Outer east group
-
+-->
 
 # 4.0 Discussion
 
