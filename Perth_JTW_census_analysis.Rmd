@@ -382,14 +382,19 @@ kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Private vehicle (drive)", "Pr
 )
 
 ```
-The changes in mode/activity share are small, but statistically significant `r extract_caption(p)`. 
+The changes in mode/activity share are small, but statistically significant 
+```{r extract_stats1 , echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses, transit modes"}
+extract_caption(p)
+
+```
+
 
 ```{r Greater_Perth_JTW_aggregate_transit, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses, transit modes"}
 
 #pivot_longer 
 Aggregate_JTW_2016_2021_transit_longer <- pivot_longer(
-  Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus", "Tram", "Ferry")], 
-  cols = c("Train", "Bus", "Tram", "Ferry"), 
+  Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus")], 
+  cols = c("Train", "Bus"), 
   names_to = "Mode",
   values_to = "People"
 )
@@ -398,7 +403,7 @@ Aggregate_JTW_2016_2021_transit_longer <- pivot_longer(
 #Aggregate_JTW_2016_2021_summary_longer$People <- round(Aggregate_JTW_2016_2021_summary_longer$People, digits = 0)
 
 #turn mode into a factor to get a specific order
-Aggregate_JTW_2016_2021_transit_longer$`Mode` <- factor( Aggregate_JTW_2016_2021_transit_longer$`Mode`, levels = c("Ferry", "Tram", "Bus", "Train"))
+Aggregate_JTW_2016_2021_transit_longer$`Mode` <- factor( Aggregate_JTW_2016_2021_transit_longer$`Mode`, levels = c("Bus", "Train"))
 
 p <- ggbarstats(
   Aggregate_JTW_2016_2021_transit_longer[,], 
@@ -409,20 +414,153 @@ p <- ggbarstats(
 
 p
 
-kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus", "Tram", "Ferry")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses, transit modes"
+kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses, transit modes"
 )
 
 ```
 
-The changes in mode/activity share are small, but statistically significant `r extract_caption(p)`. 
+The changes in mode/activity share are small, but statistically significant 
+```{r extract_stats2 , echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses, transit modes"}
+extract_caption(p)
+
+```
+
 
 ## 3.2 Disaggregate (Heritage, N-S, Outer east)
 
 ```{r Greater_Perth_JTW_disaggregate, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses"}
 
-Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry, grouping = Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry$grouping)
+Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry,Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry$grouping)
 
-Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry, grouping = Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry$grouping)
+Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry, Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry$grouping)
+
+
+
+##calculate for everyone with a usual residence in perth, by grouping
+#2016
+Group_JTW_2016 <- lapply(
+  Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate,  
+  function(x) x%>% 
+    dplyr::select(sa1_code_2021, Train, Bus, Ferry, Tram, Taxi, "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Not stated", "Not applicable")
+)
+Group_JTW_2016 <- Group_JTW_2016  %>% 
+                    adorn_totals() 
+Group_JTW_2016 <- lapply(
+  Group_JTW_2016,  
+  function(x) x%>% 
+    tail(n=1)
+)
+#Add year as 2016
+f <- function (data, name){
+  data$Year <- "2016"
+  data
+}
+Group_JTW_2021 <- Map(f, Group_JTW_2021, names(Group_JTW_2021)) 
+
+
+#2021
+Group_JTW_2021 <- lapply(
+  Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate,  
+  function(x) x%>% 
+    dplyr::select(sa1_code_2021, Train, Bus, Ferry, Tram, Taxi, "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Not stated", "Not applicable")
+)
+Group_JTW_2021 <- Group_JTW_2021  %>% 
+                    adorn_totals() 
+Group_JTW_2021 <- lapply(
+  Group_JTW_2021,  
+  function(x) x%>% 
+    tail(n=1)
+)
+
+#Add year as 2021
+f <- function (data, name){
+  data$Year <- "2020"
+  data
+}
+
+#NEXT combine into one 2016+2021 dataframe
+
+#combine modes to obtain PT, private vehicle (drive), private vehicle (passenger)  and non-motorised columns
+Aggregate_JTW_2016_2021$`Private vehicle (drive)` <- Aggregate_JTW_2016_2021$`Car, as driver` + Aggregate_JTW_2016_2021$Truck + Aggregate_JTW_2016_2021$Motorbike  
+
+Aggregate_JTW_2016_2021$`Private vehicle (passenger)` <- Aggregate_JTW_2016_2021$`Car, as passenger` + Aggregate_JTW_2016_2021$Taxi  
+
+Aggregate_JTW_2016_2021$Transit <- Aggregate_JTW_2016_2021$Train + Aggregate_JTW_2016_2021$Bus + Aggregate_JTW_2016_2021$Ferry + Aggregate_JTW_2016_2021$Tram
+
+Aggregate_JTW_2016_2021$`Non-motorised` <- Aggregate_JTW_2016_2021$Bicycle + Aggregate_JTW_2016_2021$`Walked only`
+
+#Round all to whole number of people (as correspondence to convert 2016 to 2021 SA1s resulted in some fractional people)
+Aggregate_JTW_2016_2021 <-Aggregate_JTW_2016_2021 %>% mutate_if(is.numeric, round, digits = 0)
+
+#pivot_longer 
+Aggregate_JTW_2016_2021_summary_longer <- pivot_longer(
+  Aggregate_JTW_2016_2021[, c("Year", "Private vehicle (drive)", "Private vehicle (passenger)", "Transit", "Non-motorised", "Other mode", "Worked at home")], 
+  cols = c("Private vehicle (drive)", "Private vehicle (passenger)", "Transit", "Non-motorised", "Other mode", "Worked at home"), 
+  names_to = "Mode or activity",
+  values_to = "People"
+)
+
+#Round to whole number of people (as the correspondence to convert 2016 to 2021 SA1s resulted in some fractional people)
+#Aggregate_JTW_2016_2021_summary_longer$People <- round(Aggregate_JTW_2016_2021_summary_longer$People, digits = 0)
+
+#turn mode into a factor to get a specific order
+Aggregate_JTW_2016_2021_summary_longer$`Mode or activity` <- factor( Aggregate_JTW_2016_2021_summary_longer$`Mode or activity`, levels = c("Worked at home", "Other mode", "Non-motorised", "Transit", "Private vehicle (passenger)", "Private vehicle (drive)"))
+
+p <- ggbarstats(
+  Aggregate_JTW_2016_2021_summary_longer[,], 
+  x = `Mode or activity`,
+  y = Year,
+  counts = People
+)
+
+p
+
+kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Private vehicle (drive)", "Private vehicle (passenger)", "Transit", "Non-motorised", "Other mode", "Worked at home")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses"
+)
+
+```
+The changes in mode/activity share are small, but statistically significant 
+```{r extract_stats1 , echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses, transit modes"}
+extract_caption(p)
+
+```
+
+
+```{r Greater_Perth_JTW_aggregate_transit, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses, transit modes"}
+
+#pivot_longer 
+Aggregate_JTW_2016_2021_transit_longer <- pivot_longer(
+  Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus")], 
+  cols = c("Train", "Bus"), 
+  names_to = "Mode",
+  values_to = "People"
+)
+
+#Round to whole number of people (as the correspondence to convert 2016 to 2021 SA1s resulted in some fractional people)
+#Aggregate_JTW_2016_2021_summary_longer$People <- round(Aggregate_JTW_2016_2021_summary_longer$People, digits = 0)
+
+#turn mode into a factor to get a specific order
+Aggregate_JTW_2016_2021_transit_longer$`Mode` <- factor( Aggregate_JTW_2016_2021_transit_longer$`Mode`, levels = c("Bus", "Train"))
+
+p <- ggbarstats(
+  Aggregate_JTW_2016_2021_transit_longer[,], 
+  x = `Mode`,
+  y = Year,
+  counts = People
+)
+
+p
+
+kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses, transit modes"
+)
+
+```
+
+The changes in mode/activity share are small, but statistically significant 
+```{r extract_stats2 , echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses, transit modes"}
+extract_caption(p)
+
+```
 
 ```
 
