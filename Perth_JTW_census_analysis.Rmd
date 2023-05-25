@@ -34,6 +34,7 @@ library(scales)
 library(ggstatsplot)
 library(ggmap)
 library(knitr)
+library(abs)
 
 # invalidate cache when the tufte version changes
 knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
@@ -72,6 +73,29 @@ Greater_Perth_SA1_UR_by_MTW15P_2021 <- read_csv("01 data/Greater_Perth_SA1_UR_by
     skip = 8)
 
 
+## by Year and DZ and LGA data from ABS comes in a single file, with multiple CSV sections for each LGA. I found https://pypi.org/project/table_builder_io/ which deals with this issue over in python. 
+##adapted from https://github.com/vlc/table_builder_io/ code in python
+#from table_builder_io import TableBuilderReader
+# Load python and pandas
+#reader = TableBuilderReader.from_file("/Users/julianreynolds/Documents/work/Monash University/Greater_Perth_JTW_by_DZ_and_LGA_2021.csv")
+#df = reader.read_table(as_index=True)
+#df2 = reader.read(as_index=False)
+
+#then from https://stackoverflow.com/a/55168518
+#for i in df2: 
+#   df2[i].to_csv('dataframe_id_'+str(i)+'.csv')
+
+#All of this results in an output of everything in a separated CSV for each LGA. 
+#JUST NEED TO REDO for 20216 data, then import the whole lot into R
+
+
+
+
+
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- read_csv("01 data/Greater_Perth_JTW_by_DZ_and_LGA_2016_test.csv")
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <- read_csv("01 data/Greater_Perth_JTW_by_DZ_and_LGA_2016_test.csv")
+
+
 
 #remove first empty row and last 5 rows with copyright info
 Greater_Perth_JTW_by_destination_2016 <- Greater_Perth_JTW_by_destination_2016[2:(nrow(Greater_Perth_JTW_by_destination_2016)-5),]
@@ -84,6 +108,10 @@ Greater_Perth_SA1_UR_by_MTW15P_2021 <- Greater_Perth_SA1_UR_by_MTW15P_2021[2:(nr
 #Convert Train column to numeric
 Greater_Perth_JTW_by_destination_2016$Train <- as.numeric(Greater_Perth_JTW_by_destination_2016$Train)
 Greater_Perth_JTW_by_destination_2021$Train <- as.numeric(Greater_Perth_JTW_by_destination_2021$Train)
+
+#Convert DZN column to character
+Greater_Perth_JTW_by_DZ_and_LGA_2016$`DZN (POW)` <- as.character( Greater_Perth_JTW_by_DZ_and_LGA_2016$`DZN (POW)`)
+Greater_Perth_JTW_by_DZ_and_LGA_2021$`DZN (POW)` <- as.character( Greater_Perth_JTW_by_DZ_and_LGA_2021$`DZN (POW)`)
 
 
 #update first column name to be dz_code_2016
@@ -102,18 +130,19 @@ names(Greater_Perth_SA1_UR_by_MTW15P_2016) <-
 names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- 
   c("SA1_CODE_2021", 
     names(Greater_Perth_SA1_UR_by_MTW15P_2021[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2021)]))
-
-
+#do same updates on Mode and DZ and LGA files
+names(Greater_Perth_JTW_by_DZ_and_LGA_2016) <- c("lga_name_2021", "dz_code_2016", names(Greater_Perth_JTW_by_DZ_and_LGA_2016[,3:ncol(Greater_Perth_JTW_by_DZ_and_LGA_2016)]))
+names(Greater_Perth_JTW_by_DZ_and_LGA_2021) <- c("lga_name_2021","dz_code_2021", names(Greater_Perth_JTW_by_DZ_and_LGA_2021[,3:ncol(Greater_Perth_JTW_by_DZ_and_LGA_2021)]))
 
 #Drop unneeded columns
 Greater_Perth_JTW_by_destination_2016 <- tibble(Greater_Perth_JTW_by_destination_2016[,1:17])
 Greater_Perth_JTW_by_destination_2021 <- tibble(Greater_Perth_JTW_by_destination_2021[,1:17])
 Greater_Perth_SA1_UR_by_MTW15P_2016 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2016[,1:17])
 Greater_Perth_SA1_UR_by_MTW15P_2021 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2021[,1:17])
-
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(Greater_Perth_JTW_by_DZ_and_LGA_2016[,1:18])
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <- tibble(Greater_Perth_JTW_by_DZ_and_LGA_2021[,1:18])
 
 ```
-
 
 The ABS provides correspondence files to convert between 2016 and 2021 destination zones, and between 2016 and 2021 SA1 zones. 
 
@@ -133,11 +162,18 @@ names(CG_DZN_2016_DZN_2021) <-
 
 #join
 Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, CG_DZN_2016_DZN_2021, by = "dz_code_2016")
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2016, CG_DZN_2016_DZN_2021, by = "dz_code_2016")
+
 #multiply mode numbers by RATIO_FROM_TO value
 Greater_Perth_JTW_by_destination_2016[,22:37] <- Greater_Perth_JTW_by_destination_2016[,2:17] * Greater_Perth_JTW_by_destination_2016$RATIO_FROM_TO
+
+Greater_Perth_JTW_by_DZ_and_LGA_2016[,24:39] <- Greater_Perth_JTW_by_DZ_and_LGA_2016[,3:18] * Greater_Perth_JTW_by_DZ_and_LGA_2016$RATIO_FROM_TO
+
+
 #Drop unneeded columns
 Greater_Perth_JTW_by_destination_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_destination_2016$DZN_CODE_2021, Greater_Perth_JTW_by_destination_2016[,22:37])
 
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$DZN_CODE_2021, Greater_Perth_JTW_by_DZ_and_LGA_2016[,27:39])
 
 ##convert 2016 SA1 zones into 2021 SA1 zones using the corrspondence file from the ABS
 #For some reason the correspondence file provides SA1_MAINCODE_2016, rather than SA1_CODE_2016. The main code is a different number, but there is a correspondance in the SA1_2016_AUST file from https://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016?OpenDocument
@@ -161,8 +197,6 @@ Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_7DIGITCODE_2016 <- as.character(Greater_
 CG_SA1_2016_SA1_2021$SA1_7DIGITCODE_2016 <- as.character(CG_SA1_2016_SA1_2021$SA1_7DIGITCODE_2016)
 
 
-
-
 #Now join to the Journey to work data
 Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, CG_SA1_2016_SA1_2021, by = "SA1_7DIGITCODE_2016")
 
@@ -170,8 +204,6 @@ Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_
 Greater_Perth_SA1_UR_by_MTW15P_2016[,36:51] <- Greater_Perth_SA1_UR_by_MTW15P_2016[,2:17] * as.numeric(Greater_Perth_SA1_UR_by_MTW15P_2016$RATIO_FROM_TO)
 #Drop unneeded columns
 Greater_Perth_SA1_UR_by_MTW15P_2016 <- tibble(SA1_CODE_2021 = Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_CODE_2021, Greater_Perth_SA1_UR_by_MTW15P_2016[,36:51])
-
-
 
 ```
 
@@ -249,9 +281,6 @@ names(Greater_Perth_SA1_UR_by_MTW15P_2021) <-
   c("sa1_code_2021", 
     names(Greater_Perth_SA1_UR_by_MTW15P_2021[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2021)]))
 
-
-
-
 #join destination zone geometry to destination zone JTW data
 Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, sa1_2021_map_data, by = "sa1_code_2021")
 Greater_Perth_SA1_UR_by_MTW15P_2021 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2021, sa1_2021_map_data, by = "sa1_code_2021")
@@ -325,7 +354,16 @@ map
                       
 ```
 
+For the JTW by destination and LGA files^[Greater_Perth_JTW_by_DZ_and_LGA_2016 and ..._2021], the data downloaded from the ABS Table Builder was already based on LGA boundaries. 
 
+```{r add_groupings_DZN_LGA, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
+
+
+#join grouping to JTW data frames
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2016, LGA_to_group, by = "lga_name_2021")
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2021, LGA_to_group, by = "lga_name_2021")
+
+```
 
 # 3.0 Results
 
