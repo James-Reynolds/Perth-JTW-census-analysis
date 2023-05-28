@@ -84,16 +84,33 @@ Greater_Perth_SA1_UR_by_MTW15P_2021 <- read_csv("01 data/Greater_Perth_SA1_UR_by
 #then from https://stackoverflow.com/a/55168518
 #for i in df2: 
 #   df2[i].to_csv('dataframe_id_'+str(i)+'.csv')
-
 #All of this results in an output of everything in a separated CSV for each LGA. 
 #JUST NEED TO REDO for 20216 data, then import the whole lot into R
 
 
+#Load 2021 JTW by destination zone and LGA into list
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <-
+  list.files(path = ".", pattern = "*.csv") %>% 
+  map_dfr(~read_csv(.))
+Greater_Perth_JTW_by_DZ_and_LGA_2016
+
+#Load 2021 JTW by destination zone and LGA into list
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <-
+  list.files(path = ".", pattern = "*.csv") %>% map(~read_csv("."))
+Greater_Perth_JTW_by_DZ_and_LGA_2021
 
 
+data_path <- "."   
+files <- dir(data_path, pattern = "*clean.csv") 
 
-Greater_Perth_JTW_by_DZ_and_LGA_2016 <- read_csv("01 data/Greater_Perth_JTW_by_DZ_and_LGA_2016_test.csv")
-Greater_Perth_JTW_by_DZ_and_LGA_2021 <- read_csv("01 data/Greater_Perth_JTW_by_DZ_and_LGA_2016_test.csv")
+data3 <- data_frame(filename = files) %>%
+  mutate(file_contents = map(filename,      
+           ~ read_csv(file.path(data_path, .))) 
+  )
+
+data3useful <- unnest(data3)
+
+
 
 
 
