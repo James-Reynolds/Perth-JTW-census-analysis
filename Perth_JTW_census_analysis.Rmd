@@ -332,8 +332,8 @@ Greater_Perth_JTW_by_destination_2021 <- st_intersection(Greater_Perth_JTW_by_de
 LGA_to_group <- tibble(lga_name_2021 = 
 c("Melville", "South Perth", "Stirling", "Joondalup", "Wanneroo", "Cockburn", "Kwinana", "Rockingham", "Murray", "Mandurah",
   "Bayswater", "Belmont", "Canning","Fremantle", "Nedlands", "Perth", "Subiaco", "Vincent", "Peppermint Grove", "Bassendean", "Cambridge", "Claremont", "Cottesloe", "East Fremantle", "Mosman Park", "Victoria Park","Gosnells",
-  "Kalamunda", "Swan", "Mundaring", "Armadale", "Serpentine-Jarrahdale"),
-grouping = c("North-south", "North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south", "Heritage", "Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage", "Outer east", "Outer east","Outer east","Outer east","Outer east")
+  "Kalamunda", "Swan", "Mundaring", "Armadale", "Serpentine-Jarrahdale", "Northam", "York"),
+grouping = c("North-south", "North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south", "Heritage", "Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage", "Outer east", "Outer east","Outer east","Outer east","Outer east", "Outer east","Outer east")
 )
 
 #join grouping to JTW data frames
