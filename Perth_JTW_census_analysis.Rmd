@@ -371,6 +371,65 @@ Greater_Perth_JTW_by_DZ_and_LGA_2021 <- left_join(Greater_Perth_JTW_by_DZ_and_LG
 
 ```
 
+I have also downloaded the age and employment data for all of WA's LGAs so that it is possible to calculate population and employed population for each of the Heritage, North-south and Outer east groupings. 
+
+```{r load_employment_and_age_data, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
+
+library(readr)
+X2016_WA_age_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2016_WA_Age_by_LGA.csv", skip = 8)
+X2016_WA_employment_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2016_WA_employment_by_LGA.csv", skip=8)
+X2021_WA_age_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2021_WA_Age_by_LGA.csv", skip=8)
+X2021_WA_employment_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2021_WA_Employment_by_LGA.csv", skip=8)
+
+#drop empty first row and last 5 rows, and last 2 columns
+X2016_WA_age_by_LGA <- X2016_WA_age_by_LGA[2:(nrow(X2016_WA_age_by_LGA)-5), 1:(ncol(X2016_WA_age_by_LGA)-2)]
+X2016_WA_employment_by_LGA <- X2016_WA_employment_by_LGA[2:(nrow(X2016_WA_employment_by_LGA)-5), 1:(ncol(X2016_WA_employment_by_LGA)-2)]
+X2021_WA_age_by_LGA <- X2021_WA_age_by_LGA[2:(nrow(X2021_WA_age_by_LGA)-5), 1:(ncol(X2021_WA_age_by_LGA)-2)]
+X2021_WA_employment_by_LGA <- X2021_WA_employment_by_LGA[2:(nrow(X2021_WA_employment_by_LGA)-5), 1:(ncol(X2021_WA_employment_by_LGA)-2)]
+
+#set characters to numeric for column two
+#Whoops, downloaded the by individual years data instead of the 10 year groupings
+X2016_WA_age_by_LGA$`0 years` <- as.numeric(unlist(X2016_WA_age_by_LGA[,2]))
+X2016_WA_employment_by_LGA$`Fully engaged`<- as.numeric(unlist(X2016_WA_employment_by_LGA[,2]))
+X2021_WA_age_by_LGA$`0-9 years` <- as.numeric(unlist(X2021_WA_age_by_LGA[,2]))
+X2021_WA_employment_by_LGA$`Fully engaged`<- as.numeric(unlist(X2021_WA_employment_by_LGA[,2]))
+
+#set names the same
+names(X2016_WA_age_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2016_WA_age_by_LGA[,2:ncol(X2016_WA_age_by_LGA)]))
+names(X2016_WA_employment_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2016_WA_employment_by_LGA[,2:ncol(X2016_WA_employment_by_LGA)]))
+names(X2021_WA_age_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2021_WA_age_by_LGA[,2:ncol(X2021_WA_age_by_LGA)]))
+names(X2021_WA_employment_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2021_WA_employment_by_LGA[,2:ncol(X2021_WA_employment_by_LGA)]))
+
+
+#Remove (C) and similar from lga names
+X2016_WA_age_by_LGA$lga_name_2021 <- sub(" (*).*","", X2016_WA_age_by_LGA$lga_name_2021)
+X2016_WA_employment_by_LGA$lga_name_2021 <- sub(" (*).*","", X2016_WA_employment_by_LGA$lga_name_2021)
+X2021_WA_age_by_LGA$lga_name_2021 <- sub(" (*).*","", X2021_WA_age_by_LGA$lga_name_2021)
+X2021_WA_employment_by_LGA$lga_name_2021 <- sub(" (*).*","", X2021_WA_employment_by_LGA$lga_name_2021)
+
+
+
+
+#join grouping to employment and age data frames
+X2016_WA_age_by_LGA <- left_join(X2016_WA_age_by_LGA, LGA_to_group, by = "lga_name_2021")
+X2016_WA_employment_by_LGA <- left_join(X2016_WA_employment_by_LGA, LGA_to_group, by = "lga_name_2021")
+X2021_WA_age_by_LGA <- left_join(X2021_WA_age_by_LGA, LGA_to_group, by = "lga_name_2021")
+X2021_WA_employment_by_LGA <- left_join(X2021_WA_employment_by_LGA, LGA_to_group, by = "lga_name_2021")
+
+
+```
+
+
+
+
 # 3.0 Results
 
 ## 3.1 Aggregate for Greater Perth
@@ -472,7 +531,7 @@ extract_caption(p)
 
 ## 3.2 Disaggregate (Heritage, N-S, Outer east)
 
-```{r Greater_Perth_JTW_disaggregate, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses"}
+```{r Greater_Perth_JTW_disaggregate, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Heritage grouping, journey to work mode share, 2021 and 2016 censuses"}
 
 Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry,Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry$grouping)
 
