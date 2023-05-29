@@ -35,6 +35,7 @@ library(ggstatsplot)
 library(ggmap)
 library(knitr)
 library(abs)
+library(readr)
 
 # invalidate cache when the tufte version changes
 knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
@@ -72,48 +73,6 @@ Greater_Perth_SA1_UR_by_MTW15P_2016 <- read_csv("01 data/Greater_Perth_SA1_UR_by
 Greater_Perth_SA1_UR_by_MTW15P_2021 <- read_csv("01 data/Greater_Perth_SA1_UR_by_MTW15P_2021.csv", 
     skip = 8)
 
-
-## by Year and DZ and LGA data from ABS comes in a single file, with multiple CSV sections for each LGA. I found https://pypi.org/project/table_builder_io/ which deals with this issue over in python. 
-##adapted from https://github.com/vlc/table_builder_io/ code in python
-#from table_builder_io import TableBuilderReader
-# Load python and pandas
-#reader = TableBuilderReader.from_file("/Users/julianreynolds/Documents/work/Monash University/Greater_Perth_JTW_by_DZ_and_LGA_2021.csv")
-#df = reader.read_table(as_index=True)
-#df2 = reader.read(as_index=False)
-
-##then from https://stackoverflow.com/a/55168518
-#for i in df2: 
-#   df2[i].to_csv('dataframe_id_'+str(i)+'.csv')
-##All of this results in an output of everything in a separated CSV for each LGA. 
-##Some stuffing around required as python does not play well with '0's and / etc in file names
-
-
-#Load 2016 JTW by destination zone and LGA into list
-Greater_Perth_JTW_by_DZ_and_LGA_2016 <-
-  list.files(path = ".", pattern = "*.csv") %>% 
-  map_dfr(~read_csv(.))
-Greater_Perth_JTW_by_DZ_and_LGA_2016
-
-#Load 2021 JTW by destination zone and LGA into list
-Greater_Perth_JTW_by_DZ_and_LGA_2021 <-
-  list.files(path = ".", pattern = "*.csv") %>% map(~read_csv("."))
-Greater_Perth_JTW_by_DZ_and_LGA_2021
-
-
-data_path <- "."   
-files <- dir(data_path, pattern = "*clean.csv") 
-
-data3 <- data_frame(filename = files) %>%
-  mutate(file_contents = map(filename,      
-           ~ read_csv(file.path(data_path, .))) 
-  )
-
-data3useful <- unnest(data3)
-
-
-
-
-
 #remove first empty row and last 5 rows with copyright info
 Greater_Perth_JTW_by_destination_2016 <- Greater_Perth_JTW_by_destination_2016[2:(nrow(Greater_Perth_JTW_by_destination_2016)-5),]
 Greater_Perth_JTW_by_destination_2021<- Greater_Perth_JTW_by_destination_2021[2:(nrow(Greater_Perth_JTW_by_destination_2021)-5),]
@@ -125,10 +84,6 @@ Greater_Perth_SA1_UR_by_MTW15P_2021 <- Greater_Perth_SA1_UR_by_MTW15P_2021[2:(nr
 #Convert Train column to numeric
 Greater_Perth_JTW_by_destination_2016$Train <- as.numeric(Greater_Perth_JTW_by_destination_2016$Train)
 Greater_Perth_JTW_by_destination_2021$Train <- as.numeric(Greater_Perth_JTW_by_destination_2021$Train)
-
-#Convert DZN column to character
-Greater_Perth_JTW_by_DZ_and_LGA_2016$`DZN (POW)` <- as.character( Greater_Perth_JTW_by_DZ_and_LGA_2016$`DZN (POW)`)
-Greater_Perth_JTW_by_DZ_and_LGA_2021$`DZN (POW)` <- as.character( Greater_Perth_JTW_by_DZ_and_LGA_2021$`DZN (POW)`)
 
 
 #update first column name to be dz_code_2016
@@ -147,18 +102,52 @@ names(Greater_Perth_SA1_UR_by_MTW15P_2016) <-
 names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- 
   c("SA1_CODE_2021", 
     names(Greater_Perth_SA1_UR_by_MTW15P_2021[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2021)]))
-#do same updates on Mode and DZ and LGA files
-names(Greater_Perth_JTW_by_DZ_and_LGA_2016) <- c("lga_name_2021", "dz_code_2016", names(Greater_Perth_JTW_by_DZ_and_LGA_2016[,3:ncol(Greater_Perth_JTW_by_DZ_and_LGA_2016)]))
-names(Greater_Perth_JTW_by_DZ_and_LGA_2021) <- c("lga_name_2021","dz_code_2021", names(Greater_Perth_JTW_by_DZ_and_LGA_2021[,3:ncol(Greater_Perth_JTW_by_DZ_and_LGA_2021)]))
 
-#Drop unneeded columns
 Greater_Perth_JTW_by_destination_2016 <- tibble(Greater_Perth_JTW_by_destination_2016[,1:17])
 Greater_Perth_JTW_by_destination_2021 <- tibble(Greater_Perth_JTW_by_destination_2021[,1:17])
 Greater_Perth_SA1_UR_by_MTW15P_2016 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2016[,1:17])
 Greater_Perth_SA1_UR_by_MTW15P_2021 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2021[,1:17])
-Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(Greater_Perth_JTW_by_DZ_and_LGA_2016[,1:18])
-Greater_Perth_JTW_by_DZ_and_LGA_2021 <- tibble(Greater_Perth_JTW_by_DZ_and_LGA_2021[,1:18])
 
+
+
+####Next add the JTW data by DZ and LGA
+## by Year and DZ and LGA data from ABS comes in a single file, with multiple CSV sections for each LGA. I found https://pypi.org/project/table_builder_io/ which deals with this issue over in python. 
+##adapted from https://github.com/vlc/table_builder_io/ code in python
+#from table_builder_io import TableBuilderReader
+# Load python and pandas
+#reader = TableBuilderReader.from_file("/Users/julianreynolds/Documents/work/Monash University/Greater_Perth_JTW_by_DZ_and_LGA_2021.csv")
+#df = reader.read_table(as_index=True)
+#df2 = reader.read(as_index=False)
+
+##then from https://stackoverflow.com/a/55168518
+#for i in df2: 
+#   df2[i].to_csv('dataframe_id_'+str(i)+'.csv')
+##All of this results in an output of everything in a separated CSV for each LGA. 
+##Some stuffing around required as python does not play well with '0's and / etc in file names
+
+#Load JTW by DZ and LGA data
+list_csv_files <- list.files(path = "01 data/2016_JTW_by_DZ_and_LGA", full.names = TRUE)
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- readr::read_csv(list_csv_files, id = "file_name")
+list_csv_files <- list.files(path = "01 data/2021_JTW_by_DZ_and_LGA", full.names = TRUE)
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <- readr::read_csv(list_csv_files, id = "file_name")
+
+#Extract LGA name from filename field
+Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021 <- sub(".*dataframe_id_","", Greater_Perth_JTW_by_DZ_and_LGA_2016$file_name)
+Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021 <- sub(".csv.*","", Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021)
+Greater_Perth_JTW_by_DZ_and_LGA_2021$lga_name_2021 <- sub(".*dataframe_id_","", Greater_Perth_JTW_by_DZ_and_LGA_2021$file_name)
+Greater_Perth_JTW_by_DZ_and_LGA_2021$lga_name_2021 <- sub(".csv.*","", Greater_Perth_JTW_by_DZ_and_LGA_2021$lga_name_2021)
+
+#Drop unneeded columns and put LGA column in first position
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(
+  lga_name_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021, 
+  dz_code_2016 = Greater_Perth_JTW_by_DZ_and_LGA_2016$`DZN (POW)`,
+  Greater_Perth_JTW_by_DZ_and_LGA_2016[,4:(ncol(Greater_Perth_JTW_by_DZ_and_LGA_2016)-2)]
+)
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <- tibble(
+  lga_name_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2021$lga_name_2021, 
+  dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2021$`DZN (POW)`,
+  Greater_Perth_JTW_by_DZ_and_LGA_2021[,4:(ncol(Greater_Perth_JTW_by_DZ_and_LGA_2021)-2)]
+)
 ```
 
 The ABS provides correspondence files to convert between 2016 and 2021 destination zones, and between 2016 and 2021 SA1 zones. 
@@ -190,7 +179,7 @@ Greater_Perth_JTW_by_DZ_and_LGA_2016[,24:39] <- Greater_Perth_JTW_by_DZ_and_LGA_
 #Drop unneeded columns
 Greater_Perth_JTW_by_destination_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_destination_2016$DZN_CODE_2021, Greater_Perth_JTW_by_destination_2016[,22:37])
 
-Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$DZN_CODE_2021, Greater_Perth_JTW_by_DZ_and_LGA_2016[,27:39])
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(lga_name_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021, dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$DZN_CODE_2021, Greater_Perth_JTW_by_DZ_and_LGA_2016[,24:39])
 
 ##convert 2016 SA1 zones into 2021 SA1 zones using the corrspondence file from the ABS
 #For some reason the correspondence file provides SA1_MAINCODE_2016, rather than SA1_CODE_2016. The main code is a different number, but there is a correspondance in the SA1_2016_AUST file from https://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016?OpenDocument
@@ -448,8 +437,8 @@ extract_caption(p)
 
 #pivot_longer 
 Aggregate_JTW_2016_2021_transit_longer <- pivot_longer(
-  Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus")], 
-  cols = c("Train", "Bus"), 
+  Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus", "Ferry")], 
+  cols = c("Train", "Bus", "Ferry"), 
   names_to = "Mode",
   values_to = "People"
 )
@@ -458,7 +447,7 @@ Aggregate_JTW_2016_2021_transit_longer <- pivot_longer(
 #Aggregate_JTW_2016_2021_summary_longer$People <- round(Aggregate_JTW_2016_2021_summary_longer$People, digits = 0)
 
 #turn mode into a factor to get a specific order
-Aggregate_JTW_2016_2021_transit_longer$`Mode` <- factor( Aggregate_JTW_2016_2021_transit_longer$`Mode`, levels = c("Bus", "Train"))
+Aggregate_JTW_2016_2021_transit_longer$`Mode` <- factor( Aggregate_JTW_2016_2021_transit_longer$`Mode`, levels = c("Bus", "Train", "Ferry"))
 
 p <- ggbarstats(
   Aggregate_JTW_2016_2021_transit_longer[,], 
@@ -469,7 +458,7 @@ p <- ggbarstats(
 
 p
 
-kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses, transit modes"
+kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus", "Ferry")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode/activity shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses, transit modes"
 )
 
 ```
