@@ -81,14 +81,14 @@ Greater_Perth_SA1_UR_by_MTW15P_2021 <- read_csv("01 data/Greater_Perth_SA1_UR_by
 #df = reader.read_table(as_index=True)
 #df2 = reader.read(as_index=False)
 
-#then from https://stackoverflow.com/a/55168518
+##then from https://stackoverflow.com/a/55168518
 #for i in df2: 
 #   df2[i].to_csv('dataframe_id_'+str(i)+'.csv')
-#All of this results in an output of everything in a separated CSV for each LGA. 
-#JUST NEED TO REDO for 20216 data, then import the whole lot into R
+##All of this results in an output of everything in a separated CSV for each LGA. 
+##Some stuffing around required as python does not play well with '0's and / etc in file names
 
 
-#Load 2021 JTW by destination zone and LGA into list
+#Load 2016 JTW by destination zone and LGA into list
 Greater_Perth_JTW_by_DZ_and_LGA_2016 <-
   list.files(path = ".", pattern = "*.csv") %>% 
   map_dfr(~read_csv(.))
