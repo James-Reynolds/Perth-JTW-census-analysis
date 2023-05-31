@@ -140,7 +140,7 @@ Greater_Perth_JTW_by_DZ_and_LGA_2021$lga_name_2021 <- sub(".csv.*","", Greater_P
 #Drop unneeded columns and put LGA column in first position
 Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(
   lga_name_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021, 
-  dz_code_2016 = Greater_Perth_JTW_by_DZ_and_LGA_2016$`DZN (POW)`,
+  dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$`DZN (POW)`,
   Greater_Perth_JTW_by_DZ_and_LGA_2016[,4:(ncol(Greater_Perth_JTW_by_DZ_and_LGA_2016)-2)]
 )
 Greater_Perth_JTW_by_DZ_and_LGA_2021 <- tibble(
@@ -168,18 +168,19 @@ names(CG_DZN_2016_DZN_2021) <-
 
 #join
 Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, CG_DZN_2016_DZN_2021, by = "dz_code_2016")
-Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2016, CG_DZN_2016_DZN_2021, by = "dz_code_2016")
+#Seems like the by DZ and LGA data is already by 2021 DZ zones...not sure why that is
+#Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2016, CG_DZN_2016_DZN_2021, by = "dz_code_2016")
 
 #multiply mode numbers by RATIO_FROM_TO value
 Greater_Perth_JTW_by_destination_2016[,23:38] <- Greater_Perth_JTW_by_destination_2016[,2:17] * Greater_Perth_JTW_by_destination_2016$RATIO_FROM_TO
 
-Greater_Perth_JTW_by_DZ_and_LGA_2016[,24:39] <- Greater_Perth_JTW_by_DZ_and_LGA_2016[,3:18] * Greater_Perth_JTW_by_DZ_and_LGA_2016$RATIO_FROM_TO
+#Greater_Perth_JTW_by_DZ_and_LGA_2016[,24:39] <- Greater_Perth_JTW_by_DZ_and_LGA_2016[,3:18] * Greater_Perth_JTW_by_DZ_and_LGA_2016$RATIO_FROM_TO
 
 
 #Drop unneeded columns
-Greater_Perth_JTW_by_destination_2016 <- tibble(dz_code_2021 = Greater_Perth_JTW_by_destination_2016$DZN_CODE_2021, Greater_Perth_JTW_by_destination_2016[,22:37])
+Greater_Perth_JTW_by_destination_2016 <- tibble(dz_code_2016 = Greater_Perth_JTW_by_destination_2016$dz_code_2016, dz_code_2021 = Greater_Perth_JTW_by_destination_2016$DZN_CODE_2021, Greater_Perth_JTW_by_destination_2016[,22:37])
 
-Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(lga_name_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021, dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$DZN_CODE_2021, Greater_Perth_JTW_by_DZ_and_LGA_2016[,24:39])
+#Greater_Perth_JTW_by_DZ_and_LGA_2016 <- tibble(lga_name_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021, dz_code_2016 = Greater_Perth_JTW_by_DZ_and_LGA_2016$dz_code_2016, dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2016$DZN_CODE_2021, Greater_Perth_JTW_by_DZ_and_LGA_2016[,24:39])
 
 ##convert 2016 SA1 zones into 2021 SA1 zones using the corrspondence file from the ABS
 #For some reason the correspondence file provides SA1_MAINCODE_2016, rather than SA1_CODE_2016. The main code is a different number, but there is a correspondance in the SA1_2016_AUST file from https://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016?OpenDocument
@@ -376,10 +377,10 @@ I have also downloaded the age and employment data for all of WA's LGAs so that 
 ```{r load_employment_and_age_data, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
 
 library(readr)
-X2016_WA_age_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2016_WA_Age_by_LGA.csv", skip = 8)
-X2016_WA_employment_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2016_WA_employment_by_LGA.csv", skip=8)
-X2021_WA_age_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2021_WA_Age_by_LGA.csv", skip=8)
-X2021_WA_employment_by_LGA <- read_csv("~/0001 projects/Perth-JTW-census-analysis/01 data/2021_WA_Employment_by_LGA.csv", skip=8)
+X2016_WA_age_by_LGA <- read_csv("01 data/2016_WA_Age_by_LGA.csv", skip = 8)
+X2016_WA_employment_by_LGA <- read_csv("01 data/2016_WA_employment_by_LGA.csv", skip=8)
+X2021_WA_age_by_LGA <- read_csv("01 data/2021_WA_Age_by_LGA.csv", skip=8)
+X2021_WA_employment_by_LGA <- read_csv("01 data/2021_WA_Employment_by_LGA.csv", skip=8)
 
 #drop empty first row and last 5 rows, and last 2 columns
 X2016_WA_age_by_LGA <- X2016_WA_age_by_LGA[2:(nrow(X2016_WA_age_by_LGA)-5), 1:(ncol(X2016_WA_age_by_LGA)-2)]
@@ -830,7 +831,7 @@ kable(employment %>%
 ## 3.3 CBD vs non-CBD
 
 
-```{r Greater_Perth_JTW_aggregate_CBD_vs_non_CBD, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Perth CBD vs rest of Greater Perth, 2021 destination zones"}
+```{r Map_CBD_vs_non_CBD, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Perth CBD vs rest of Greater Perth, 2021 destination zones"}
 
 CBD_sa1_codes <- tibble (sa1_code = c("50302129706", "50302129703", "50302129714", "50302129704", "50302129707", "50302129715", "50302129713", "50302129711", "50302129724", "50302129720", "50302129709", "50302129708", "50302129729", "50302129726", "50302129722"), 
                          Location = "CBD"
@@ -838,17 +839,28 @@ CBD_sa1_codes <- tibble (sa1_code = c("50302129706", "50302129703", "50302129714
 
 CBD_dz_codes <- tibble (dz_code_2021 = c("512970037", "512970047", "512970035", "512970039", "512970042", "512970025", "512970033", "512970028", "512970020", "512970023", "512970011", "512970038", "512970032", "512970027", "512970046", "512970041", "512970036", "512970031", "512970049", "512970045", "512970040", "512970034", "512970048", "512970043", "512970030", "512970043", "512970048", "512970050", "512970044", "512970001"), Location = "CBD"
                          )
+CBD_dz_codes2016 <- tibble (dz_code_2016 = c("510411093", "510411106", "510411090", "510411095", "510411078", "510411071", "510411056", "510411076", "510411081", "510411087", "510411098", "510411094", "510411086", "510411080", "510411085", "510411091", "510411097", "51041102", "510411108", "510411101", "510411096", "510411088", "510411084", "510411099", "510411107", "510411112", "510411109", "510411100", "510411102"), Location = "CBD"
+                         )
+
+
 #Join CBD zones with Greater Perth map data
-Greater_Perth_JTW_by_destination_2021 <- left_join(DZ2021_map_data %>%
+
+
+
+DZ2016_map_data <- left_join((dz2016 %>%
+  filter(state_name_2016 == "Western Australia")), CBD_dz_codes2016, by = "dz_code_2016")
+
+DZ2021_map_data <- left_join(DZ2021_map_data %>%
   filter(gcc_name_2021 == "Greater Perth"), CBD_dz_codes)
 
 #Change NA to non-CBD for all other DZ in Greater Perth
-Greater_Perth_JTW_by_destination_2021$Location <- replace_na(Greater_Perth_JTW_by_destination_2021$Location, "non-CBD")
+DZ2016_map_data$Location <- replace_na(DZ2016_map_data$Location, "non-CBD")
+DZ2021_map_data$Location <- replace_na(DZ2021_map_data$Location, "non-CBD")
 
 
 
 #Map destination zones
-map <- Greater_Perth_JTW_by_destination_2021 %>%
+map <- DZ2016_map_data %>%
    ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
               fill = Location),     # fill by whether it is CBD or non-CBD
@@ -865,7 +877,87 @@ map
 
 
 #Map destination zones
-map <- Greater_Perth_JTW_by_destination_2021 %>%
+map <- DZ2016_map_data %>%
+  filter(sa2_name_2016 == "Perth (West) - Northbridge" | sa2_name_2016 == "East Perth") %>%
+   ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = Location),     # fill by whether it is CBD or non-CBD
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf()
+
+map
+
+
+DZ2016_map_data <- left_join((dz2016 %>%
+  filter(state_name_2016 == "Western Australia")), CBD_dz_codes2016, by = "dz_code_2016")
+
+DZ2021_map_data <- left_join(DZ2021_map_data %>%
+  filter(gcc_name_2021 == "Greater Perth"), CBD_dz_codes)
+
+#Change NA to non-CBD for all other DZ in Greater Perth
+DZ2016_map_data$Location <- replace_na(DZ2016_map_data$Location, "non-CBD")
+DZ2021_map_data$Location <- replace_na(DZ2021_map_data$Location, "non-CBD")
+
+#Map destination zones
+map <- DZ2016_map_data %>%
+   ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = Location),     # fill by whether it is CBD or non-CBD
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf()
+
+map
+
+
+
+#Map destination zones
+map <- DZ2016_map_data %>%
+  filter(sa2_name_2016 == "Perth City") %>%
+   ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = Location),     # fill by whether it is CBD or non-CBD
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf()
+
+map
+
+
+
+
+#Map destination zones
+map <- DZ2021_map_data %>%
+   ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = Location),     # fill by whether it is CBD or non-CBD
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf()
+
+map
+
+
+
+#Map destination zones
+map <- DZ2021_map_data %>%
   filter(sa2_name_2021.x == "Perth (West) - Northbridge" | sa2_name_2021.x == "East Perth") %>%
    ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
@@ -890,7 +982,7 @@ map
 
 
 #Join CBD zones with Greater Perth map data
-Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2021, CBD_dz_codes, by = "dz_code_2021")
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2016, CBD_dz_codes, by = "dz_code_2021")
 Greater_Perth_JTW_by_DZ_and_LGA_2021 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2021, CBD_dz_codes, by = "dz_code_2021")
 
 #Change NA to non-CBD for all other DZ in Greater Perth
@@ -969,7 +1061,6 @@ kable(untabyl(Aggregate_JTW_2016_2021_CBD[, c("Year", "Private vehicle (drive)",
 
 ##non-CBD only
 Aggregate_JTW_2016_2021_non_CBD <- Aggregate_JTW_2016_2021 %>% filter(Location == "non-CBD")
-
 #pivot_longer 
 Aggregate_JTW_2016_2021_summary_longer <- pivot_longer(
   Aggregate_JTW_2016_2021_non_CBD[, c("Year", "Private vehicle (drive)", "Private vehicle (passenger)", "Transit", "Non-motorised", "Other Mode", "Worked at home")], 
