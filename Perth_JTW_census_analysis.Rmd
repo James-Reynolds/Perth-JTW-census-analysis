@@ -150,6 +150,12 @@ Greater_Perth_JTW_by_DZ_and_LGA_2021 <- tibble(
   dz_code_2021 = Greater_Perth_JTW_by_DZ_and_LGA_2021$`DZN (POW)`,
   Greater_Perth_JTW_by_DZ_and_LGA_2021[,4:(ncol(Greater_Perth_JTW_by_DZ_and_LGA_2021)-2)]
 )
+
+#remove total rows
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- Greater_Perth_JTW_by_DZ_and_LGA_2016 %>% filter(dz_code_2021 != "Total")
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <- Greater_Perth_JTW_by_DZ_and_LGA_2021 %>% filter(dz_code_2021 != "Total")
+
+
 ```
 
 The ABS provides correspondence files to convert between 2016 and 2021 destination zones, and between 2016 and 2021 SA1 zones. 
@@ -990,9 +996,13 @@ CBD_dz_codes2016 <- tibble (dz_code_2021 = c("510411093", "510411106", "51041109
 Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2016, CBD_dz_codes2016, by = "dz_code_2021")
 Greater_Perth_JTW_by_DZ_and_LGA_2021 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2021, CBD_dz_codes, by = "dz_code_2021")
 
-#Change NA to non-CBD for all other DZ in Greater Perth
+#Change NA to non-CBD for all other DZ in Western Australia
 Greater_Perth_JTW_by_DZ_and_LGA_2016$Location <- Greater_Perth_JTW_by_DZ_and_LGA_2016$Location %>% replace_na("non-CBD")
 Greater_Perth_JTW_by_DZ_and_LGA_2021$Location <- Greater_Perth_JTW_by_DZ_and_LGA_2021$Location %>% replace_na("non-CBD")
+
+#Restrict to only include Greater Perth LGAs
+Greater_Perth_JTW_by_DZ_and_LGA_2016 <- Greater_Perth_JTW_by_DZ_and_LGA_2016[Greater_Perth_JTW_by_DZ_and_LGA_2016$lga_name_2021 %in% LGA_to_group$lga_name_2021 ,]
+Greater_Perth_JTW_by_DZ_and_LGA_2021 <- Greater_Perth_JTW_by_DZ_and_LGA_2021[Greater_Perth_JTW_by_DZ_and_LGA_2021$lga_name_2021 %in% LGA_to_group$lga_name_2021 ,]
 
 #Match taxi and tram column names
 names(Greater_Perth_JTW_by_DZ_and_LGA_2016) <- c("lga_name_2021", "dz_code_2021", "Train", "Bus", "Ferry","Tram/light rail", "Taxi/ride-share service", "Car, as driver", "Car, as passenger", "Truck", "Motorbike/scooter", "Bicycle", "Walked only", "Other Mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "grouping", "Location")  
