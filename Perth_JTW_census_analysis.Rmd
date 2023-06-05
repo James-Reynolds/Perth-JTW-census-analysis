@@ -43,71 +43,162 @@ options(htmltools.dir.version = FALSE)
 ```
 
 # 1.0 Introduction
-The Monash University Public Transport Research Group is looking at changes in travel behaviour in Perth surrounding the COVID-19 pandemic. Part of this work involves examining the Australian Bureau of Statistics (ABS) journey-to-work data for the 2016 and 2021 censuses. Areas of interest are: 
+Monash University's Public Transport Research Group (PTRG) is looking at changes in travel behaviour in Perth surrounding the COVID-19 pandemic. Part of this work involves examining the Australian Bureau of Statistics (ABS) journey-to-work data for the 2016 and 2021 censuses. Areas of interest are: 
 
-- Aggregate Analysis for all of Greater Perth area
+- an aggregate analysis for all of the Greater Perth area;
 
-- Disaggregate Area Analysis for the three areas of Perth definied in previous PTRG work^[See Graham's sample size jottings worksheet.]: the North-south Group ^[City of Melville, City of South Perth, City of Stirling, City of Joondalup, City of Wanneroo, City of Cockburn, City of Kwinana, City of Rockingham, City of Murray and City of Mandurah.], the Heritage Group ^[City of Bayswater, City of Belmont, City of Canning, City of Fremantle, City of Nedlands, City of Perth, City of Subiaco, City of Vincent, Shire of Peppermint Grove, Town of Bassendean, Town of Cambridge, Town of Claremont, Town of Cottesloe, Town of East Fremantle, Town of Mosman Park, Town of Victoria Park and City of Gosnells.] and the Outer east^[City of Kalamunda, City of Swan, Shire of Mundaring, City of Armadale, and Shire of Serpentine-Jarrahdale.].
+- a disaggregate analysis for three groupings of Perth Local Government Areas (LGAs) defined in previous PTRG work as: the North-south grouping^[City of Melville, City of South Perth, City of Stirling, City of Joondalup, City of Wanneroo, City of Cockburn, City of Kwinana, City of Rockingham, City of Murray and City of Mandurah.], the Heritage grouping ^[City of Bayswater, City of Belmont, City of Canning, City of Fremantle, City of Nedlands, City of Perth, City of Subiaco, City of Vincent, Shire of Peppermint Grove, Town of Bassendean, Town of Cambridge, Town of Claremont, Town of Cottesloe, Town of East Fremantle, Town of Mosman Park, Town of Victoria Park and City of Gosnells.] and the Outer-east grouping^[City of Kalamunda, City of Swan, Shire of Mundaring, City of Armadale, and Shire of Serpentine-Jarrahdale.].
 
--	Perth CBD^[Using the WADoT Perth Greater CBD Transport Plan https://www.transport.wa.gov.au/mediaFiles/projects/PROJECT_I_Perth_Greater_CBD_Transport_Plan_map.pdf the Central Perth CBD generally consists of the 2021 Statistical Area 1 (SA1) zones of 50302129706, 50302129703, 50302129714, 50302129704, 50302129707, 50302129715, 50302129713, 50302129711, 50302129724, 50302129720, 50302129709, 50302129708, 50302129729, 50302129726 and 50302129722.] / Non-CBD-based Jobs 
-  - Aggregate Analysis: comparing journeys to the CBD with journeys not to the CBD.
-  - Disaggregate Spatial Analysis, again using the North-South, Heritage and Outer East groups. 
-
-
+-	Perth CBD^[Here the Central Perth area is adatoped, as depicted in the WADoT Perth Greater CBD Transport Plan https://www.transport.wa.gov.au/mediaFiles/projects/PROJECT_I_Perth_Greater_CBD_Transport_Plan_map.pdf]  / non-CBD-based Jobs, for all of Greater Perth and for the North-south, Heritage and Outer-east groupings
+  
 This working note details the process of collecting and reviewing the ABS data. It is structured as follows: the next section details the processing of the ABS data; Section 3 presents the results; followed by a brief discussion in Section 4; and conclusions in Section 5. 
 
-# 2.0 Methods and data processing
+# 2.0 Methods and data
+# 2.1 Journey To Work (JTW) by Statistical Area 1 (SA1) of usual residence
+JTW data was extracted for people whose place of usual residence is in Greater Perth using the Table Builder on the ABS website. The 15 travel modes data was extracted^[This groups people into those who travelled by train, bus, ferry, tram, taxi, car (as driver), car (as passenger), truck, motorbike, bicycle, walked only, other mode, worked at home, did not go to work, not stated and not applicable. Note that there are slight differences in the variable names between the 2016 and 2021 censuses: taxi becomes taxi/ride share, tram becomes LRT/tram. Here the 2016 names will be adopted.].
 
-The Journey-To-Work (JTW) data was extracted using the Table Builder on the ABS website. Data from 2016 and 2021 for Greater Perth was obtained. Join this with the Destination Zones allows mode shares to be mapped, as shown in the margin figure.
 
 ```{r load_abs_jtw_data, echo=FALSE, message = FALSE, warning=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
 
-Greater_Perth_JTW_by_destination_2016 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2016.csv", 
-    skip = 8)
-Greater_Perth_JTW_by_destination_2021 <- read_csv("01 data/Greater_Perth_JTW_by_destination_2021.csv", 
-    skip = 8)
 
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- read_csv("01 data/Greater_Perth_SA1_UR_by_MTW15P_2016.csv", 
+SA1_UR_by_MTW15P_2016_Greater_Perth <- read_csv("01 data/Greater_Perth_SA1_UR_by_MTW15P_2016.csv", 
     skip = 8)
 
-Greater_Perth_SA1_UR_by_MTW15P_2021 <- read_csv("01 data/Greater_Perth_SA1_UR_by_MTW15P_2021.csv", 
+SA1_UR_by_MTW15P_2021_Greater_Perth <- read_csv("01 data/Greater_Perth_SA1_UR_by_MTW15P_2021.csv", 
     skip = 8)
 
-#remove first empty row and last 5 rows with copyright info
-Greater_Perth_JTW_by_destination_2016 <- Greater_Perth_JTW_by_destination_2016[2:(nrow(Greater_Perth_JTW_by_destination_2016)-5),]
-Greater_Perth_JTW_by_destination_2021<- Greater_Perth_JTW_by_destination_2021[2:(nrow(Greater_Perth_JTW_by_destination_2021)-5),]
+#Drop blank top row, total row and bottom rows with copyright information
+SA1_UR_by_MTW15P_2016_Greater_Perth <- SA1_UR_by_MTW15P_2016_Greater_Perth[2:(nrow(SA1_UR_by_MTW15P_2016_Greater_Perth)-5),]
+SA1_UR_by_MTW15P_2021_Greater_Perth <- SA1_UR_by_MTW15P_2021_Greater_Perth[2:(nrow(SA1_UR_by_MTW15P_2021_Greater_Perth)-5),]
 
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- Greater_Perth_SA1_UR_by_MTW15P_2016[2:(nrow(Greater_Perth_SA1_UR_by_MTW15P_2016)-5),]
-Greater_Perth_SA1_UR_by_MTW15P_2021 <- Greater_Perth_SA1_UR_by_MTW15P_2021[2:(nrow(Greater_Perth_SA1_UR_by_MTW15P_2021)-5),]
-
-
-#Convert Train column to numeric
-Greater_Perth_JTW_by_destination_2016$Train <- as.numeric(Greater_Perth_JTW_by_destination_2016$Train)
-Greater_Perth_JTW_by_destination_2021$Train <- as.numeric(Greater_Perth_JTW_by_destination_2021$Train)
-
-
-#update first column name to be dz_code_2016
-names(Greater_Perth_JTW_by_destination_2016) <- 
-  c("dz_code_2016", 
-    names(Greater_Perth_JTW_by_destination_2016[,2:ncol(Greater_Perth_JTW_by_destination_2016)]))
-#Do same update first column name to be dz_code_2021
-names(Greater_Perth_JTW_by_destination_2021) <- 
-  c("dz_code_2021", 
-    names(Greater_Perth_JTW_by_destination_2021[,2:ncol(Greater_Perth_JTW_by_destination_2021)]))
-#Update first column name to be SA1_CODE_2016
-names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- 
+#Update first column name to be SA1_CODE_2016, and rest of columns to match 2016 column names
+names(SA1_UR_by_MTW15P_2016_Greater_Perth) <- 
   c("SA1_CODE_2016", 
-    names(Greater_Perth_SA1_UR_by_MTW15P_2016[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2016)]))
+    names(SA1_UR_by_MTW15P_2016_Greater_Perth[,2:ncol(SA1_UR_by_MTW15P_2016_Greater_Perth)]))
 #Update first column name to be SA1_CODE_2021
-names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- 
+names(SA1_UR_by_MTW15P_2021_Greater_Perth) <- 
   c("SA1_CODE_2021", 
-    names(Greater_Perth_SA1_UR_by_MTW15P_2021[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2021)]))
+    names(SA1_UR_by_MTW15P_2021_Greater_Perth[,2:ncol(SA1_UR_by_MTW15P_2016_Greater_Perth)]))
 
-Greater_Perth_JTW_by_destination_2016 <- tibble(Greater_Perth_JTW_by_destination_2016[,1:17])
-Greater_Perth_JTW_by_destination_2021 <- tibble(Greater_Perth_JTW_by_destination_2021[,1:17])
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2016[,1:17])
-Greater_Perth_SA1_UR_by_MTW15P_2021 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2021[,1:17])
+#clean the names
+SA1_UR_by_MTW15P_2016_Greater_Perth <- clean_names(SA1_UR_by_MTW15P_2016_Greater_Perth)
+SA1_UR_by_MTW15P_2021_Greater_Perth <- clean_names(SA1_UR_by_MTW15P_2021_Greater_Perth)
 
+#drop total column
+SA1_UR_by_MTW15P_2016_Greater_Perth <- tibble(SA1_UR_by_MTW15P_2016_Greater_Perth[,1:17])
+SA1_UR_by_MTW15P_2021_Greater_Perth <- tibble(SA1_UR_by_MTW15P_2021_Greater_Perth[,1:17])
+
+
+
+```
+
+The ABS provides a correspondence file to convert between 2016 and 2021 SA1 zones. This file ^[CG_SA1_2016_SA1_2021.csv] is loaded and used to convert the SA1 2016 data to SA1 2021. 
+
+```{r SA1_UR_correspndence files, echo=FALSE, message = FALSE, warning=FALSE, fig.margin=TRUE, fig.cap="Greater Perth, car driver mode share by destination zone, 2016", cache=TRUE}
+
+
+CG_SA1_2016_SA1_2021 <- read_csv("01 data/CG_SA1_2016_SA1_2021.csv")
+##convert 2016 SA1 zones into 2021 SA1 zones using the corrspondence file from the ABS
+CG_SA1_2016_SA1_2021 <- clean_names(CG_SA1_2016_SA1_2021)
+#For some reason the correspondence file provides SA1_MAINCODE_2016, rather than SA1_CODE_2016. The main code is a different number, but there is a correspondance in the SA1_2016_AUST file from https://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016?OpenDocument. So import that
+SA1_2016_AUST <- read_csv("01 data/SA1_2016_AUST.csv")
+SA1_2016_AUST <- clean_names(SA1_2016_AUST)
+
+#set so types are the same
+CG_SA1_2016_SA1_2021$sa1_maincode_2016 <- as.character(CG_SA1_2016_SA1_2021$sa1_maincode_2016)
+SA1_2016_AUST$sa1_maincode_2016 <- as.character(SA1_2016_AUST$sa1_maincode_2016)
+#join
+CG_SA1_2016_SA1_2021 <- left_join(CG_SA1_2016_SA1_2021, SA1_2016_AUST, by = "sa1_maincode_2016")
+
+#set names the same
+names(SA1_UR_by_MTW15P_2016_Greater_Perth) <- 
+  c("sa1_7digitcode_2016", 
+    names(SA1_UR_by_MTW15P_2016_Greater_Perth[,2:ncol(SA1_UR_by_MTW15P_2016_Greater_Perth)]))
+
+
+#again set so types are the same
+SA1_UR_by_MTW15P_2016_Greater_Perth$sa1_7digitcode_2016 <- as.character(SA1_UR_by_MTW15P_2016_Greater_Perth$sa1_7digitcode_2016)
+CG_SA1_2016_SA1_2021$sa1_7digitcode_2016 <- as.character(CG_SA1_2016_SA1_2021$sa1_7digitcode_2016)
+
+
+#Now join to the Journey to work data
+SA1_UR_by_MTW15P_2016_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2016_Greater_Perth, CG_SA1_2016_SA1_2021, by = "sa1_7digitcode_2016")
+
+#multiply mode numbers by RATIO_FROM_TO value
+SA1_UR_by_MTW15P_2016_Greater_Perth[,36:51] <- SA1_UR_by_MTW15P_2016_Greater_Perth[,2:17] * as.numeric(SA1_UR_by_MTW15P_2016_Greater_Perth$ratio_from_to)
+#Drop unneeded columns
+SA1_UR_by_MTW15P_2016_Greater_Perth <- tibble(sa1_code_2021 = SA1_UR_by_MTW15P_2016_Greater_Perth$sa1_code_2021, SA1_UR_by_MTW15P_2016_Greater_Perth[,36:51])
+
+```
+
+Next, add the Heritage, North-south and Outer east groupings to the datasets. To do this, however, it is necessary to add the Local Government Areas (LGA) details to each dataset.  LGAs do not directly correspond to SA1 boundaries, so it will be necessary to 1. load the SA1 and DZ geometry to the journey to work datasets, 2. Load the LGA geometry, 3. Find the intersections of the LGA boundaries and the SA1s.  
+
+First, loading the ABS mapping data via the absmapsdata package [@absmapsdata] gives:
+
+```{r load_absmapsdata_SA1_to_LGA, echo=FALSE, fig.margin=TRUE, fig.cap="", cache=TRUE}
+
+#Load SA1_2021 data
+sa1_2021_map_data <- sa12021
+
+#Only keep Greater Perth data
+sa1_2021_map_data <- sa1_2021_map_data %>% filter(gcc_name_2021 == "Greater Perth")
+
+#join SA1 geometry to SA1 JTW data
+SA1_UR_by_MTW15P_2016_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2016_Greater_Perth, sa1_2021_map_data, by = "sa1_code_2021")
+SA1_UR_by_MTW15P_2021_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2021_Greater_Perth, sa1_2021_map_data, by = "sa1_code_2021")
+```
+
+Next get the LGA boundaries, find intersections with JTW dataset geometries, and assign the goupings into the dataset..
+
+
+```{r add_groupings, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
+
+#get ABS LGA boundaries
+lga_areas <- lga2021 %>% filter(state_name_2021 == "Western Australia")
+
+
+#turn JTW datasets into sf objected
+SA1_UR_by_MTW15P_2016_Greater_Perth <- st_sf(SA1_UR_by_MTW15P_2016_Greater_Perth)
+SA1_UR_by_MTW15P_2021_Greater_Perth <- st_sf(SA1_UR_by_MTW15P_2021_Greater_Perth)
+
+#find intersections of SA1 and LGA and DZ and LGA boundaries
+SA1_UR_by_MTW15P_2016_Greater_Perth <- st_intersection(SA1_UR_by_MTW15P_2016_Greater_Perth, lga_areas)
+SA1_UR_by_MTW15P_2021_Greater_Perth <- st_intersection(SA1_UR_by_MTW15P_2016_Greater_Perth, lga_areas)
+
+LGA_to_group <- tibble(lga_name_2021 = 
+c("Melville", "South Perth", "Stirling", "Joondalup", "Wanneroo", "Cockburn", "Kwinana", "Rockingham", "Murray", "Mandurah",
+  "Bayswater", "Belmont", "Canning","Fremantle", "Nedlands", "Perth", "Subiaco", "Vincent", "Peppermint Grove", "Bassendean", "Cambridge", "Claremont", "Cottesloe", "East Fremantle", "Mosman Park", "Victoria Park","Gosnells",
+  "Kalamunda", "Swan", "Mundaring", "Armadale", "Serpentine-Jarrahdale", "Northam", "York"),
+grouping = c("North-south", "North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south","North-south", "Heritage", "Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage","Heritage", "Outer-east", "Outer-east","Outer-east","Outer-east","Outer-east", "Outer-east","Outer-east")
+)
+
+#join grouping to JTW data frames
+SA1_UR_by_MTW15P_2016_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2016_Greater_Perth, LGA_to_group, by = "lga_name_2021")
+SA1_UR_by_MTW15P_2021_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2021_Greater_Perth, LGA_to_group, by = "lga_name_2021")
+
+#Map Groupings
+map <- SA1_UR_by_MTW15P_2016_Greater_Perth %>%
+    ggplot() +
+  geom_sf(aes(geometry = geometry,  # use the geometry variable
+              fill = grouping),     # fill by grouping
+          lwd = 0,                  # remove borders
+          show.legend = TRUE) +    # keep legend
+ # geom_point(aes(cent_long,
+  #               cent_lat),        # use the centroid long (x) and lats (y)
+   #          colour = "white") +    # make the points white
+  theme_void() +                    # clears other plot elements
+  coord_sf() 
+
+map 
+
+
+                      
+```
+
+
+
+# 2.2 Journey to work by SA1 (usual residence) and destination zone
+```{r load_abs_2021_2016_destination_zones_correspondence_SA1_and_DZ, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
 
 
 ####Next add the JTW data by DZ and LGA
@@ -156,11 +247,6 @@ Greater_Perth_JTW_by_DZ_and_LGA_2016 <- Greater_Perth_JTW_by_DZ_and_LGA_2016 %>%
 Greater_Perth_JTW_by_DZ_and_LGA_2021 <- Greater_Perth_JTW_by_DZ_and_LGA_2021 %>% filter(dz_code_2021 != "Total")
 
 
-```
-
-The ABS provides correspondence files to convert between 2016 and 2021 destination zones, and between 2016 and 2021 SA1 zones. 
-
-```{r load_abs_2021_2016_destination_zones_correspondence, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
 
 #Load DZ2021 to DZ2016 correspondence file
 CG_DZN_2016_DZN_2021 <- read_csv("01 data/CG_DZN_2016_DZN_2021.csv")
@@ -202,23 +288,23 @@ SA1_2016_AUST$SA1_MAINCODE_2016 <- as.character(SA1_2016_AUST$SA1_MAINCODE_2016)
 CG_SA1_2016_SA1_2021 <- left_join(CG_SA1_2016_SA1_2021, SA1_2016_AUST, by = "SA1_MAINCODE_2016")
 
 #set names the same
-names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- 
+names(SA1_UR_by_MTW15P_2016_Greater_Perth) <- 
   c("SA1_7DIGITCODE_2016", 
-    names(Greater_Perth_SA1_UR_by_MTW15P_2016[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2016)]))
+    names(SA1_UR_by_MTW15P_2016_Greater_Perth[,2:ncol(SA1_UR_by_MTW15P_2016_Greater_Perth)]))
 
 
 #again set so types are the same
-Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_7DIGITCODE_2016 <- as.character(Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_7DIGITCODE_2016)
+SA1_UR_by_MTW15P_2016_Greater_Perth$SA1_7DIGITCODE_2016 <- as.character(SA1_UR_by_MTW15P_2016_Greater_Perth$SA1_7DIGITCODE_2016)
 CG_SA1_2016_SA1_2021$SA1_7DIGITCODE_2016 <- as.character(CG_SA1_2016_SA1_2021$SA1_7DIGITCODE_2016)
 
 
 #Now join to the Journey to work data
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, CG_SA1_2016_SA1_2021, by = "SA1_7DIGITCODE_2016")
+SA1_UR_by_MTW15P_2016_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2016_Greater_Perth, CG_SA1_2016_SA1_2021, by = "SA1_7DIGITCODE_2016")
 
 #multiply mode numbers by RATIO_FROM_TO value
-Greater_Perth_SA1_UR_by_MTW15P_2016[,36:51] <- Greater_Perth_SA1_UR_by_MTW15P_2016[,2:17] * as.numeric(Greater_Perth_SA1_UR_by_MTW15P_2016$RATIO_FROM_TO)
+SA1_UR_by_MTW15P_2016_Greater_Perth[,36:51] <- SA1_UR_by_MTW15P_2016_Greater_Perth[,2:17] * as.numeric(SA1_UR_by_MTW15P_2016_Greater_Perth$RATIO_FROM_TO)
 #Drop unneeded columns
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- tibble(SA1_CODE_2021 = Greater_Perth_SA1_UR_by_MTW15P_2016$SA1_CODE_2021, Greater_Perth_SA1_UR_by_MTW15P_2016[,36:51])
+SA1_UR_by_MTW15P_2016_Greater_Perth <- tibble(SA1_CODE_2021 = SA1_UR_by_MTW15P_2016_Greater_Perth$SA1_CODE_2021, SA1_UR_by_MTW15P_2016_Greater_Perth[,36:51])
 
 ```
 
@@ -226,7 +312,7 @@ Next, add the Heritage, North-south and Outer east groupings to the datasets. To
 
 First, loading the ABS mapping data via the absmapsdata package [@absmapsdata] gives:
 
-```{r load_absmapsdata_destination_zones_2021, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
+```{r load_absmapsdata_destination_zones_2021_SA1_and_DZ, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
 
 #Load DZ2021 data
 DZ2021_map_data <- dz2021
@@ -269,7 +355,7 @@ Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destinat
 Greater_Perth_JTW_by_destination_2021 <- left_join(Greater_Perth_JTW_by_destination_2021, DZ2021_map_data, by = "dz_code_2021")
 ```
 
-```{r load_absmapsdata_SA1_zones_2021, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
+```{r load_absmapsdata_SA1_zones_2021_SA1_and_DZ, echo=FALSE, fig.margin=TRUE, fig.cap="Perth 2021 destination zonea", cache=TRUE}
 
 #Map SA1 zones
 map <- sa1_2021_map_data %>%
@@ -289,22 +375,22 @@ map
 
 
 #set names the same
-names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- 
+names(SA1_UR_by_MTW15P_2016_Greater_Perth) <- 
   c("sa1_code_2021", 
-    names(Greater_Perth_SA1_UR_by_MTW15P_2016[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2016)]))
-names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- 
+    names(SA1_UR_by_MTW15P_2016_Greater_Perth[,2:ncol(SA1_UR_by_MTW15P_2016_Greater_Perth)]))
+names(SA1_UR_by_MTW15P_2021_Greater_Perth) <- 
   c("sa1_code_2021", 
-    names(Greater_Perth_SA1_UR_by_MTW15P_2021[,2:ncol(Greater_Perth_SA1_UR_by_MTW15P_2021)]))
+    names(SA1_UR_by_MTW15P_2021_Greater_Perth[,2:ncol(SA1_UR_by_MTW15P_2021_Greater_Perth)]))
 
 #join destination zone geometry to destination zone JTW data
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, sa1_2021_map_data, by = "sa1_code_2021")
-Greater_Perth_SA1_UR_by_MTW15P_2021 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2021, sa1_2021_map_data, by = "sa1_code_2021")
+SA1_UR_by_MTW15P_2016_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2016_Greater_Perth, sa1_2021_map_data, by = "sa1_code_2021")
+SA1_UR_by_MTW15P_2021_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2021_Greater_Perth, sa1_2021_map_data, by = "sa1_code_2021")
 ```
 
 Next get the LGA boundaries, find intersections with JTW dataset geometries, and assign the goupings into the dataset..
 
 
-```{r add_groupings, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
+```{r add_groupings_SA1_and_DZ, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
 
 #get ABS LGA boundaries
 lga_areas <- lga2021 %>% filter(state_name_2021 == "Western Australia")
@@ -313,15 +399,15 @@ lga_areas <- lga2021 %>% filter(state_name_2021 == "Western Australia")
 #turn JTW datasets into sf objected
 Greater_Perth_JTW_by_destination_2016 <- st_sf(Greater_Perth_JTW_by_destination_2016)
 Greater_Perth_JTW_by_destination_2021 <- st_sf(Greater_Perth_JTW_by_destination_2021)
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- st_sf(Greater_Perth_SA1_UR_by_MTW15P_2016)
-Greater_Perth_SA1_UR_by_MTW15P_2021 <- st_sf(Greater_Perth_SA1_UR_by_MTW15P_2021)
+SA1_UR_by_MTW15P_2016_Greater_Perth <- st_sf(SA1_UR_by_MTW15P_2016_Greater_Perth)
+SA1_UR_by_MTW15P_2021_Greater_Perth <- st_sf(SA1_UR_by_MTW15P_2021_Greater_Perth)
 
 
 
 
 #find intersections of SA1 and LGA and DZ and LGA boundaries
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- st_intersection(Greater_Perth_SA1_UR_by_MTW15P_2016, lga_areas)
-Greater_Perth_SA1_UR_by_MTW15P_2021 <- st_intersection(Greater_Perth_SA1_UR_by_MTW15P_2016, lga_areas)
+SA1_UR_by_MTW15P_2016_Greater_Perth <- st_intersection(SA1_UR_by_MTW15P_2016_Greater_Perth, lga_areas)
+SA1_UR_by_MTW15P_2021_Greater_Perth <- st_intersection(SA1_UR_by_MTW15P_2016_Greater_Perth, lga_areas)
 Greater_Perth_JTW_by_destination_2016 <- st_intersection(Greater_Perth_JTW_by_destination_2016, lga_areas)
 Greater_Perth_JTW_by_destination_2021 <- st_intersection(Greater_Perth_JTW_by_destination_2021, lga_areas)
 
@@ -337,8 +423,8 @@ grouping = c("North-south", "North-south","North-south","North-south","North-sou
 #join grouping to JTW data frames
 Greater_Perth_JTW_by_destination_2016 <- left_join(Greater_Perth_JTW_by_destination_2016, LGA_to_group, by = "lga_name_2021")
 Greater_Perth_JTW_by_destination_2021 <- left_join(Greater_Perth_JTW_by_destination_2021, LGA_to_group, by = "lga_name_2021")
-Greater_Perth_SA1_UR_by_MTW15P_2016 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2016, LGA_to_group, by = "lga_name_2021")
-Greater_Perth_SA1_UR_by_MTW15P_2021 <- left_join(Greater_Perth_SA1_UR_by_MTW15P_2021, LGA_to_group, by = "lga_name_2021")
+SA1_UR_by_MTW15P_2016_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2016_Greater_Perth, LGA_to_group, by = "lga_name_2021")
+SA1_UR_by_MTW15P_2021_Greater_Perth <- left_join(SA1_UR_by_MTW15P_2021_Greater_Perth, LGA_to_group, by = "lga_name_2021")
 
 
 #fix names
@@ -346,12 +432,12 @@ names(Greater_Perth_JTW_by_destination_2016) <- c("dz_code_2021", "Train", "Bus"
 
 names(Greater_Perth_JTW_by_destination_2021) <- c("dz_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "sa2_name_2021.y", "sa2_name_2021.y", "gcc_name_2021", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "geometry", "grouping")
 
-names(Greater_Perth_SA1_UR_by_MTW15P_2016) <- c("sa1_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "sa3_code_2021", "sa3_name_2021", "sa4_code_2021", "sa4_name_2021", "gcc_code_2021", "gcc_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "geometry", "grouping")
-names(Greater_Perth_SA1_UR_by_MTW15P_2021) <- c("sa1_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "sa3_code_2021", "sa3_name_2021", "sa4_code_2021", "sa4_name_2021", "gcc_code_2021", "gcc_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "lga_code_2021.1", "lga_name_2021.1", "state_code_2021.2", "state_name_2021.2", "areasqkm_2021.2", "cent_lat.2", "cent_long.2", "geometry", "grouping")
+names(SA1_UR_by_MTW15P_2016_Greater_Perth) <- c("sa1_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "sa3_code_2021", "sa3_name_2021", "sa4_code_2021", "sa4_name_2021", "gcc_code_2021", "gcc_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "geometry", "grouping")
+names(SA1_UR_by_MTW15P_2021_Greater_Perth) <- c("sa1_code_2021", "Train", "Bus", "Ferry", "Tram", "Taxi", "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Did not go to work", "Not stated", "Not applicable", "sa2_code_2021", "sa2_name_2021", "sa3_code_2021", "sa3_name_2021", "sa4_code_2021", "sa4_name_2021", "gcc_code_2021", "gcc_name_2021", "state_code_2021", "state_name_2021", "areasqkm_2021", "cent_lat", "cent_long", "lga_code_2021", "lga_name_2021", "state_code_2021.1", "state_name_2021.1", "areasqkm_2021.1", "cent_lat.1", "cent_long.1", "lga_code_2021.1", "lga_name_2021.1", "state_code_2021.2", "state_name_2021.2", "areasqkm_2021.2", "cent_lat.2", "cent_long.2", "geometry", "grouping")
 
 
 #Map Groupings
-map <- Greater_Perth_SA1_UR_by_MTW15P_2016 %>%
+map <- SA1_UR_by_MTW15P_2016_Greater_Perth %>%
     ggplot() +
   geom_sf(aes(geometry = geometry,  # use the geometry variable
               fill = grouping),     # fill by grouping
@@ -371,7 +457,7 @@ map
 
 For the JTW by destination and LGA files^[Greater_Perth_JTW_by_DZ_and_LGA_2016 and ..._2021], the data downloaded from the ABS Table Builder was already based on LGA boundaries. 
 
-```{r add_groupings_DZN_LGA, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
+```{r add_groupings_DZN_LGA_SA1_and_DZ, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
 
 
 #join grouping to JTW data frames
@@ -379,6 +465,67 @@ Greater_Perth_JTW_by_DZ_and_LGA_2016 <- left_join(Greater_Perth_JTW_by_DZ_and_LG
 Greater_Perth_JTW_by_DZ_and_LGA_2021 <- left_join(Greater_Perth_JTW_by_DZ_and_LGA_2021, LGA_to_group, by = "lga_name_2021")
 
 ```
+
+I have also downloaded the age and employment data for all of WA's LGAs so that it is possible to calculate population and employed population for each of the Heritage, North-south and Outer east groupings. 
+
+```{r load_employment_and_age_data_SA1_and_DZ, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.cap="Greater Perth: Heritage, North-south and Outer East groupings", cache=TRUE}
+
+library(readr)
+X2016_WA_age_by_LGA <- read_csv("01 data/2016_WA_Age_by_LGA.csv", skip = 8)
+X2016_WA_employment_by_LGA <- read_csv("01 data/2016_WA_employment_by_LGA.csv", skip=8)
+X2021_WA_age_by_LGA <- read_csv("01 data/2021_WA_Age_by_LGA.csv", skip=8)
+X2021_WA_employment_by_LGA <- read_csv("01 data/2021_WA_Employment_by_LGA.csv", skip=8)
+
+#drop empty first row and last 5 rows, and last 2 columns
+X2016_WA_age_by_LGA <- X2016_WA_age_by_LGA[2:(nrow(X2016_WA_age_by_LGA)-5), 1:(ncol(X2016_WA_age_by_LGA)-2)]
+X2016_WA_employment_by_LGA <- X2016_WA_employment_by_LGA[2:(nrow(X2016_WA_employment_by_LGA)-5), 1:(ncol(X2016_WA_employment_by_LGA)-2)]
+X2021_WA_age_by_LGA <- X2021_WA_age_by_LGA[2:(nrow(X2021_WA_age_by_LGA)-5), 1:(ncol(X2021_WA_age_by_LGA)-2)]
+X2021_WA_employment_by_LGA <- X2021_WA_employment_by_LGA[2:(nrow(X2021_WA_employment_by_LGA)-5), 1:(ncol(X2021_WA_employment_by_LGA)-2)]
+
+#set characters to numeric for column two
+#Whoops, downloaded the by individual years data instead of the 10 year groupings
+X2016_WA_age_by_LGA$`0 years` <- as.numeric(unlist(X2016_WA_age_by_LGA[,2]))
+X2016_WA_employment_by_LGA$`Fully engaged`<- as.numeric(unlist(X2016_WA_employment_by_LGA[,2]))
+X2021_WA_age_by_LGA$`0-9 years` <- as.numeric(unlist(X2021_WA_age_by_LGA[,2]))
+X2021_WA_employment_by_LGA$`Fully engaged`<- as.numeric(unlist(X2021_WA_employment_by_LGA[,2]))
+
+#set names the same
+names(X2016_WA_age_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2016_WA_age_by_LGA[,2:ncol(X2016_WA_age_by_LGA)]))
+names(X2016_WA_employment_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2016_WA_employment_by_LGA[,2:ncol(X2016_WA_employment_by_LGA)]))
+names(X2021_WA_age_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2021_WA_age_by_LGA[,2:ncol(X2021_WA_age_by_LGA)]))
+names(X2021_WA_employment_by_LGA) <- 
+  c("lga_name_2021", 
+    names(X2021_WA_employment_by_LGA[,2:ncol(X2021_WA_employment_by_LGA)]))
+
+
+#Remove (C) and similar from lga names
+X2016_WA_age_by_LGA$lga_name_2021 <- sub(" (*).*","", X2016_WA_age_by_LGA$lga_name_2021)
+X2016_WA_employment_by_LGA$lga_name_2021 <- sub(" (*).*","", X2016_WA_employment_by_LGA$lga_name_2021)
+X2021_WA_age_by_LGA$lga_name_2021 <- sub(" (*).*","", X2021_WA_age_by_LGA$lga_name_2021)
+X2021_WA_employment_by_LGA$lga_name_2021 <- sub(" (*).*","", X2021_WA_employment_by_LGA$lga_name_2021)
+
+
+
+
+#join grouping to employment and age data frames
+X2016_WA_age_by_LGA <- left_join(X2016_WA_age_by_LGA, LGA_to_group, by = "lga_name_2021")
+X2016_WA_employment_by_LGA <- left_join(X2016_WA_employment_by_LGA, LGA_to_group, by = "lga_name_2021")
+X2021_WA_age_by_LGA <- left_join(X2021_WA_age_by_LGA, LGA_to_group, by = "lga_name_2021")
+X2021_WA_employment_by_LGA <- left_join(X2021_WA_employment_by_LGA, LGA_to_group, by = "lga_name_2021")
+
+
+```
+
+# 2.3 Population and working population data
+
+
+For the JTW by destination and LGA files^[Greater_Perth_JTW_by_DZ_and_LGA_2016 and ..._2021], the data downloaded from the ABS Table Builder was already based on LGA boundaries. 
 
 I have also downloaded the age and employment data for all of WA's LGAs so that it is possible to calculate population and employed population for each of the Heritage, North-south and Outer east groupings. 
 
@@ -438,7 +585,6 @@ X2021_WA_employment_by_LGA <- left_join(X2021_WA_employment_by_LGA, LGA_to_group
 
 
 
-
 # 3.0 Results
 
 ## 3.1 Aggregate for Greater Perth
@@ -446,12 +592,12 @@ X2021_WA_employment_by_LGA <- left_join(X2021_WA_employment_by_LGA, LGA_to_group
 
 Greater_Perth_JTW_by_destination_2016_no_geometry <- Greater_Perth_JTW_by_destination_2016 %>% st_drop_geometry()
 Greater_Perth_JTW_by_destination_2021_no_geometry <- Greater_Perth_JTW_by_destination_2021 %>% st_drop_geometry()
-Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry <- Greater_Perth_SA1_UR_by_MTW15P_2016 %>% st_drop_geometry()
-Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry <- Greater_Perth_SA1_UR_by_MTW15P_2021 %>% st_drop_geometry()
+SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry <- SA1_UR_by_MTW15P_2016_Greater_Perth %>% st_drop_geometry()
+SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry <- SA1_UR_by_MTW15P_2021_Greater_Perth %>% st_drop_geometry()
 
 #calculate aggregates for everyone with a usual residence in perth
-Aggregate_JTW_2016_2021 <- tibble(Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry[,1:17] %>% adorn_totals() %>% tail(n=1))
-Aggregate_JTW_2016_2021 <- add_row(Aggregate_JTW_2016_2021, Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry[,1:17] %>% adorn_totals() %>% tail(n=1))
+Aggregate_JTW_2016_2021 <- tibble(SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry[,1:17] %>% adorn_totals() %>% tail(n=1))
+Aggregate_JTW_2016_2021 <- add_row(Aggregate_JTW_2016_2021, SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry[,1:17] %>% adorn_totals() %>% tail(n=1))
 
 Aggregate_JTW_2016_2021$Year <- c("2016", "2021")
 
@@ -542,14 +688,14 @@ extract_caption(p)
 
 ```{r Greater_Perth_JTW_disaggregate, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Heritage, North-south and Outer East groupings, journey to work mode share, 2021 and 2016 censuses"}
 
-Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry,Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry$grouping)
+SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry_disaggregate <- split (SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry,SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry$grouping)
 
-Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry, Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry$grouping)
+SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry_disaggregate <- split (SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry, SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry$grouping)
 
 ##calculate for everyone with a usual residence in perth, by grouping
 #2016
 Group_JTW_2016 <- lapply(
-  Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate,  
+  SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry_disaggregate,  
   function(x) x%>% 
     dplyr::select(sa1_code_2021, Train, Bus, Ferry, Tram, Taxi, "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Not stated", "Not applicable")
 )
@@ -570,7 +716,7 @@ Group_JTW_2016 <- Map(f, Group_JTW_2016, names(Group_JTW_2016))
 
 #2021
 Group_JTW_2021 <- lapply(
-  Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate,  
+  SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry_disaggregate,  
   function(x) x%>% 
     dplyr::select(sa1_code_2021, Train, Bus, Ferry, Tram, Taxi, "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Not stated", "Not applicable")
 )
@@ -1143,14 +1289,14 @@ kable(untabyl(Aggregate_JTW_2016_2021[, c("Year", "Train", "Bus")]) %>% adorn_to
 
 ```{r Greater_Perth_JTW_disaggregate_CBD_vs_non_CBD, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, journey to work mode share, 2021 and 2016 censuses"}
 
-Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry,Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry$grouping)
+SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry_disaggregate <- split (SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry,SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry$grouping)
 
-Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate <- split (Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry, Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry$grouping)
+SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry_disaggregate <- split (SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry, SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry$grouping)
 
 ##calculate for everyone with a usual residence in perth, by grouping
 #2016
 Group_JTW_2016 <- lapply(
-  Greater_Perth_SA1_UR_by_MTW15P_2016_no_geometry_disaggregate,  
+  SA1_UR_by_MTW15P_2016_Greater_Perth_no_geometry_disaggregate,  
   function(x) x%>% 
     dplyr::select(sa1_code_2021, Train, Bus, Ferry, Tram, Taxi, "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Not stated", "Not applicable")
 )
@@ -1171,7 +1317,7 @@ Group_JTW_2016 <- Map(f, Group_JTW_2016, names(Group_JTW_2016))
 
 #2021
 Group_JTW_2021 <- lapply(
-  Greater_Perth_SA1_UR_by_MTW15P_2021_no_geometry_disaggregate,  
+  SA1_UR_by_MTW15P_2021_Greater_Perth_no_geometry_disaggregate,  
   function(x) x%>% 
     dplyr::select(sa1_code_2021, Train, Bus, Ferry, Tram, Taxi, "Car, as driver", "Car, as passenger", "Truck", "Motorbike", "Bicycle", "Walked only", "Other mode", "Worked at home", "Not stated", "Not applicable")
 )
@@ -1370,3 +1516,5 @@ No significant changes in train vs bus split for the Heritage grouping (p = 0.72
 # create a bib file for the R packages used in this document
 knitr::write_bib(c('base', 'rmarkdown'), file = 'skeleton.bib')
 ```
+
+
