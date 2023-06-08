@@ -1,0 +1,21 @@
+Australian Bureau of Statistics
+
+"2021 Census - employment, income and education"
+"GCCSA (UR) by MTW15P Method of Travel to Work (15 travel modes)"
+"Counting: Person Records"
+
+Filters:
+"Default Summation","Person Records"
+
+"MTW15P Method of Travel to Work (15 travel modes)","Train","Bus","Ferry","Tram/light rail","Taxi/ride-share service","Car, as driver","Car, as passenger","Truck","Motorbike/scooter","Bicycle","Other Mode","Walked only","Worked at home","Did not go to work","Not stated","Not applicable","Total",
+"GCCSA (UR)",
+"Greater Perth",52327,36687,395,132,4809,661581,47522,5714,2840,6885,14942,16774,80658,123429,4194,1057758,2116647,
+"Total",52327,36687,395,132,4809,661581,47522,5714,2840,6885,14942,16774,80658,123429,4194,1057758,2116647,
+
+"Dataset: Census of Population and Housing, 2021, TableBuilder"
+
+"INFO","Cells in this table have been randomly adjusted to avoid the release of confidential data. No reliance should be placed on small cells."
+
+
+"Copyright Commonwealth of Australia, 2021, see abs.gov.au/copyright"
+"ABS data licensed under Creative Commons, see abs.gov.au/ccby"
