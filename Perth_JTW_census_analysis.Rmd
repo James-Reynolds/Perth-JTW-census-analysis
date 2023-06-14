@@ -340,14 +340,12 @@ The following shows aggregate results for all people whose usual residence was w
 ```{r Population_and_employment_Greater_Perth, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Greater Perth, population and employment, 2021 and 2016 censuses"}
 
 #calculate aggregates for everyone with a usual residence in perth
-Aggregate_UR_2016_2021 <- (X2016_WA_age_by_LGA %>% adorn_totals(where = c("row","col")))[nrow(X2016_WA_age_by_LGA)+1,"Total"]
-Aggregate_UR_2016_2021 <- add_row(Aggregate_UR_2016_2021, (X2021_WA_age_by_LGA %>% adorn_totals(where = c("row","col")))[nrow(X2021_WA_age_by_LGA)+1,"Total"])
+Aggregate_UR_2016_2021 <- (X2016_WA_age_by_LGA %>% filter(!is.na(grouping)) %>% adorn_totals(where = c("row","col")))[nrow(X2016_WA_age_by_LGA %>% filter(!is.na(grouping)))+1,"Total"]
+Aggregate_UR_2016_2021 <- add_row(Aggregate_UR_2016_2021, (X2021_WA_age_by_LGA %>% filter(!is.na(grouping)) %>% adorn_totals(where = c("row","col")))[nrow((X2021_WA_age_by_LGA %>% filter(!is.na(grouping))))+1,"Total"])
 
 #calculate aggregates for everyone who is emplyed with a usual residence in perth
-Aggregate_employed_UR_2016_2021 <- (X2016_WA_employment_by_LGA[,c("lga_name_2021","Fully engaged", "Partially engaged", "At least partially engaged")] %>% adorn_totals(where = c("row","col")))[nrow(X2016_WA_employment_by_LGA)+1,"Total"]
-
-
-Aggregate_employed_UR_2016_2021 <- add_row(Aggregate_employed_UR_2016_2021, (X2021_WA_employment_by_LGA[,c("lga_name_2021","Fully engaged", "Partially engaged", "At least partially engaged")] %>% adorn_totals(where = c("row","col")))                                                                      [nrow(X2021_WA_employment_by_LGA)+1,"Total"])
+Aggregate_employed_UR_2016_2021 <- (X2016_WA_employment_by_LGA %>% filter(!is.na(grouping)) %>% dplyr::select(lga_name_2021,"Fully engaged", "Partially engaged", "At least partially engaged") %>% adorn_totals(where = c("row","col")))[nrow(X2016_WA_employment_by_LGA %>% filter(!is.na(grouping)))+1,"Total"]
+Aggregate_employed_UR_2016_2021 <- add_row(Aggregate_employed_UR_2016_2021, (X2021_WA_employment_by_LGA %>% filter(!is.na(grouping)) %>% dplyr::select(lga_name_2021,"Fully engaged", "Partially engaged", "At least partially engaged") %>% adorn_totals(where = c("row","col")))                                                                      [nrow(X2021_WA_employment_by_LGA %>% filter(!is.na(grouping)))+1,"Total"])
 
 
 Aggregate_pop_and_employed_UR_2016_2021 <- tibble(Year = c("2016","2021"))
@@ -367,6 +365,10 @@ Aggregate_pop_and_employed_UR_2016_2021_change[1,"Employed"] <-
     Aggregate_pop_and_employed_UR_2016_2021[2,3] - Aggregate_pop_and_employed_UR_2016_2021[1,3]
 Aggregate_pop_and_employed_UR_2016_2021_change[2,"Population"] <- Aggregate_pop_and_employed_UR_2016_2021[2,2] / Aggregate_pop_and_employed_UR_2016_2021[1,2]-1
 Aggregate_pop_and_employed_UR_2016_2021_change[2,"Employed"] <- Aggregate_pop_and_employed_UR_2016_2021[2,3] / Aggregate_pop_and_employed_UR_2016_2021[1,3]-1
+
+
+Population_and_employment_summary_table <- Aggregate_pop_and_employed_UR_2016_2021
+Population_and_employment_summary_table$grouping <- c("All", "All")
 
 ```
 
@@ -475,7 +477,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares for transit, persons with a usual residence in Greater Perth, 2016 and 2021 censuses; excluding did not go to work, not stated and not applicable"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses; excluding did not go to work, not stated and not applicable")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares, persons with a usual residence in Greater Perth, 2016 and 2021 censuses; excluding did not go to work, not stated and not applicable")
 
 
 
@@ -537,6 +539,9 @@ Aggregate_pop_and_employed_UR_2016_2021_change[2,"Employed"] <- Aggregate_pop_an
 #kable(Aggregate_pop_and_employed_UR_2016_2021_change, caption = "Population and employed population changes, Heritage grouping, 2016 and 2021")
 
 
+
+Aggregate_pop_and_employed_UR_2016_2021$grouping <- c("Heritage", "Heritage")
+Population_and_employment_summary_table <- add_row(Population_and_employment_summary_table, Aggregate_pop_and_employed_UR_2016_2021)
 
 
 ```
@@ -608,7 +613,12 @@ The number of people whose usuual residence is in the Heritage grouping of LGas 
 The rate of increase in the number of people whose usual residence is in the Heritage grouping of LGAs who commuted as a passenger in a private vehicle (+`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"])-1)`, +`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]))` people) was roughly twice the rate of the increase in the number of people who were employed or studying (+`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_pop_and_employed_UR_2016_2021_change[2,3]))`).  However, overall passenger mode share only increased by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`. 
 
 
-Transit ridership fell slightly (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])/as.numeric(Aggregate_JTW_2016_2021[1,"transit"])-1)`), with transit mode share also dropping (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"transit"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"transit"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`). The following shows changes in ridership amongst each transit mode:
+Transit ridership fell slightly (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])/as.numeric(Aggregate_JTW_2016_2021[1,"transit"])-1)`), with transit mode share also dropping (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"transit"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"transit"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`). However, it is important to note that the Freemantle line was scheduled to be fully closed on the day of the census ^[See https://chartingtransport.com/category/mode-share/ which may be part of the reason for the drop in transit ridership]
+]
+
+
+
+The following shows changes in ridership amongst each transit mode:
 
 
 
@@ -639,7 +649,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares for transit, persons with a usual residence in Heritage grouping, 2016 and 2021 censuses; excluding did not go to work, not stated and not applicable"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work transit mode shares, persons with a usual residence in Heritage grouping, 2016 and 2021 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work transit mode shares, persons with a usual residence in Heritage grouping, 2016 and 2021 censuses")
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("Heritage", "Heritage"), place_of_work = c("All", "All"))
 
@@ -658,7 +668,7 @@ A Pearson's chi-squared test indicated that the relationship between census and 
 
 Despite the fall in overall transit ridership (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`), the number of commuters living in the Heritage grouping who used the bus rose by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"bus"])-as.numeric(Aggregate_JTW_2016_2021[1,"bus"]))` (`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"bus"])/as.numeric(Aggregate_JTW_2016_2021[1,"bus"])-1)`). Bus ridership rose as a share of transit ridership by `r label_percent(accuracy = 0.1)((as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/( Aggregate_JTW_2016_2021[2,"transit"])) - as.numeric(Aggregate_JTW_2016_2021[1,"bus"]/(Aggregate_JTW_2016_2021[1,"transit"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/(Aggregate_JTW_2016_2021[2,"transit"])))`. However, the overall bus mode share fell by `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"bus"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`.
 
-The number of people who used the train fell by `r label_number(big.mark = ",")(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])-as.numeric(Aggregate_JTW_2016_2021[1,"train"])))`(`r label_percent()(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])/as.numeric(Aggregate_JTW_2016_2021[1,"train"])-1))`). Train ridership as a share of transit ridership also fell, dropping `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/( Aggregate_JTW_2016_2021[2,"transit"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"transit"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"transit"])))`. The overall train mode share dropped by `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`.
+The number of people who used the train fell by `r label_number(big.mark = ",")(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])-as.numeric(Aggregate_JTW_2016_2021[1,"train"])))`(`r label_percent()(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])/as.numeric(Aggregate_JTW_2016_2021[1,"train"])-1))`). Train ridership as a share of transit ridership also fell, dropping `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/( Aggregate_JTW_2016_2021[2,"transit"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"transit"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"transit"])))`. The overall train mode share dropped by `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`. However, again it is important to note that the Freemantle line was scheduled to be fully closed on the day of the census ^[See https://chartingtransport.com/category/mode-share/ which may be part of the reason for the drop in train (and perhaps also bus) ridership.].
 
 Notably, the drop in the number of people commuting by non-motorised modes (walk or bike) was `r label_number(big.mark = ",", accuracy = 0.1)((as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])-as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]))/(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"])))` times larger than the loss in transit ridership, with `r label_number(big.mark = ",")(-(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])-as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"])))` fewer people walking or cycling to work in 2021 than in 2016 (equating to a fall of `r label_percent()(-(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])/as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"])-1))`). Non-motorised mode share also dropped  to  `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`(`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`).
 
@@ -707,6 +717,8 @@ Aggregate_pop_and_employed_UR_2016_2021_change[2,"Employed"] <- Aggregate_pop_an
 #kable(Aggregate_pop_and_employed_UR_2016_2021_change, caption = "Population and employed population changes, North-south grouping, 2016 and 2021")
 
 
+Aggregate_pop_and_employed_UR_2016_2021$grouping <- c("North-south", "North-south")
+Population_and_employment_summary_table <- add_row(Population_and_employment_summary_table, Aggregate_pop_and_employed_UR_2016_2021)
 
 
 ```
@@ -811,7 +823,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares for transit, persons with a usual residence in North-south grouping of LGAs, 2016 and 2021 censuses."
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares, persons with a usual residence in North-south grouping, 2016 and 2021 censuses; excluding did not go to work, not stated and not applicable")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares, persons with a usual residence in North-south grouping, 2016 and 2021 censuses; excluding did not go to work, not stated and not applicable")
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("North-south", "North-south"), place_of_work = c("All", "All"))
 
@@ -876,9 +888,10 @@ Aggregate_pop_and_employed_UR_2016_2021_change[2,"Population"] <- Aggregate_pop_
 Aggregate_pop_and_employed_UR_2016_2021_change[2,"Employed"] <- Aggregate_pop_and_employed_UR_2016_2021[2,3] / Aggregate_pop_and_employed_UR_2016_2021[1,3]-1
 
 
-#kable(Aggregate_pop_and_employed_UR_2016_2021_change, caption = "Population and employed population changes, Outer-east grouping, 2016 and 2021")
+kable(Aggregate_pop_and_employed_UR_2016_2021_change, caption = "Population and employed population changes, Outer-east grouping, 2016 and 2021")
 
-
+Aggregate_pop_and_employed_UR_2016_2021$grouping <- c("Outer-east", "Outer-east")
+Population_and_employment_summary_table <- add_row(Population_and_employment_summary_table, Aggregate_pop_and_employed_UR_2016_2021)
 
 
 ```
@@ -892,8 +905,8 @@ The population rose by `r format(as.numeric(Aggregate_pop_and_employed_UR_2016_2
 ```{r Outer_east_JTW, echo=FALSE, message=FALSE, warning=FALSE, fig.margin=FALSE, fig.fullwidth=FALSE, fig.cap="Outer-east grouping, journey to work mode share, 2021 and 2016 censuses"}
 
 #calculate aggregates for everyone with a usual residence in perth
-Aggregate_JTW_2016_2021 <- tibble(LGA_UR_JTW_2016 %>% filter(grouping == "Heritage") %>% adorn_totals() %>% tail(n=1))
-Aggregate_JTW_2016_2021 <- add_row(Aggregate_JTW_2016_2021, LGA_UR_JTW_2021 %>% filter(grouping == "Heritage") %>% adorn_totals() %>% tail(n=1))
+Aggregate_JTW_2016_2021 <- tibble(LGA_UR_JTW_2016 %>% filter(grouping == "Outer-east") %>% adorn_totals() %>% tail(n=1))
+Aggregate_JTW_2016_2021 <- add_row(Aggregate_JTW_2016_2021, LGA_UR_JTW_2021 %>% filter(grouping == "Outer-east") %>% adorn_totals() %>% tail(n=1))
 
 Aggregate_JTW_2016_2021$Year <- c("2016", "2021")
 
@@ -951,7 +964,11 @@ The number of people who worked from home increased by `r label_number(big.mark 
 
 
 
-The number of people who were a passenger in a private vehicle increased by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"])-1)`), with passenger mode share also increasing by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`. 
+The number of people who were a passenger in a private vehicle increased by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"])-1)`), but passenger mode share remained steady (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))` change). 
+
+
+
+The number of people who used non-motorised modes fell by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])-as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])/as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"])-1)`). The non-motorised mode share also dropped (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`).
 
 
 The number of people who used transit dropped slightly (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])/as.numeric(Aggregate_JTW_2016_2021[1,"transit"])-1)`). Transit mode share also dropped (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"transit"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"transit"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`). The following summarizes the mode split amongst those who used transit: 
@@ -985,7 +1002,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares, persons with a usual residence in the Outer-east grouping, 2016 and 2021 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares, persons with a usual residence in the Outer-east grouping, 2016 and 2021 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares, persons with a usual residence in the Outer-east grouping, 2016 and 2021 censuses")
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("Outer-east", "Outer-east"), place_of_work = c("All", "All"))
 
@@ -1000,16 +1017,7 @@ summary_table <- add_row(summary_table, summary_table_add)
 ```
 
 
-A Pearson's chi-squared test indicated that the relationship between census and the shares of train, bus and ferry ridership was significant `r print_chi2(as.matrix(Aggregate_JTW_2016_2021[1:2,c("train", "bus", "ferry")]))`.
-
-The number of people who used the train fell by `r label_number(big.mark = ",")(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])-as.numeric(Aggregate_JTW_2016_2021[1,"train"])))`(`r label_percent()(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])/as.numeric(Aggregate_JTW_2016_2021[1,"train"])-1))`). Train ridership as a share of transit ridership also dropped, falling by `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/( Aggregate_JTW_2016_2021[2,"transit"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"transit"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"transit"])))`. The overall train mode share also dropped by `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`.
-
-Bus ridership amongst those with a usual residence within the Outer-east grouping of LGAs actually increased (+`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"bus"])-as.numeric(Aggregate_JTW_2016_2021[1,"bus"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"bus"])/as.numeric(Aggregate_JTW_2016_2021[1,"bus"])-1)`). Bus ridership rose as a share of transit ridership by `r label_percent(accuracy = 0.1)((as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/( Aggregate_JTW_2016_2021[2,"transit"])) - as.numeric(Aggregate_JTW_2016_2021[1,"bus"]/(Aggregate_JTW_2016_2021[1,"transit"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/(Aggregate_JTW_2016_2021[2,"transit"])))`, but the overall bus mode share fell`r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"bus"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"bus"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`.
-
-
-
-Notably, the number of people who used non-motorised modes fell by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])-as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])/as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"])-1)`), which is a large fall than for the train or for transit overall. The non-motorised mode share also dropped (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`).
-
+A Pearson's chi-squared test indicated that the relationship between census and the shares of train, bus and ferry ridership was not significant `r print_chi2(as.matrix(Aggregate_JTW_2016_2021[1:2,c("train", "bus", "ferry")]))`.
 
 
 
@@ -1118,7 +1126,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work shares for each transit mode, persons with a usual residence in Greater Perth and place of work in the (central) Perth LGA, 2016 and 2021 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares for transit, persons with a usual residence in Greater Perth and place of work in the (central) Perth LGA, 2016 and 2021 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Journey to work mode shares for transit, persons with a usual residence in Greater Perth and place of work in the (central) Perth LGA, 2016 and 2021 censuses")
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("Greater Perth", "Greater Perth"), place_of_work = c("City of Perth", "City of Perth"))
 
@@ -1241,7 +1249,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "People with a usual residence in the Heritage grouping and a place of work in central Perth, journey to work mode share by train, bus and ferry, 2021 and 2016 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "People with a usual residence in the Heritage grouping and a place of work in central Perth, journey to work overall mode share for train, bus and ferry, 2021 and 2016 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "People with a usual residence in the Heritage grouping and a place of work in central Perth, journey to work overall mode share for train, bus and ferry, 2021 and 2016 censuses")
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("Heritage", "Heritage"), place_of_work = c("City of Perth", "City of Perth"))
 
@@ -1324,7 +1332,7 @@ A Pearson's chi-squared test indicated that the relationship between census and 
 
 
 
-The largest increase was in the amount of work from home. This increased by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])-as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]))` to `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"]))`, which is `r label_number(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])/as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]))`) times larger than the number of people working from home in 2016.  The WFH share also increased by a relatively large amount, rising from `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`. 
+The largest increase was in the amount of work from home. This increased by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])-as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]))` to `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"]))`, which is `r label_number(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])/as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]))` times larger than the number of people working from home in 2016.  The WFH share also increased by a relatively large amount, rising from `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`. 
 
 The number of people who drove a private vehicle increased by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"]))` (+`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"])-1)`). Drive mode share also increased (by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`).
 
@@ -1366,7 +1374,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "North-south grouping, central Perth place of work, journey to work share for transit modes, 2021 and 2016 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "North-south grouping, central Perth place of work, journey to work share for transit modes, 2021 and 2016 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "North-south grouping, central Perth place of work, journey to work share for transit modes, 2021 and 2016 censuses")
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("North-south", "North-south"), place_of_work = c("City of Perth", "City of Perth"))
 
@@ -1447,24 +1455,26 @@ kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "private_vehicle_drive", "priva
 A Pearson's chi-squared test indicated that the relationship between census and JTW activity/mode was significant `r print_chi2(as.matrix(Aggregate_JTW_2016_2021[1:2,c("private_vehicle_drive", "private_vehicle_passenger", "transit", "non_motorised", "other_mode", "worked_at_home")]))`.
 
 
-The number of people who drove a private vehicle increased (+`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"]))`, or by +`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"])-1)`), but the drive mode share dropped (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`).
+
+The number of people who worked from home changed by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])-as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])/as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"])-1)`), with WFH share changing by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`. 
+
+
+
+
+
+
+
+The number of people who drove a private vehicle increased (+`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"]))`, or by +`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"])-1)`), and drive mode share also increased by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`.
 
 
 
 The number of people who were a passenger in a private vehicle changed by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"])-1)`), with passenger mode share changing by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`. 
 
 
-The number of people who used transit changed by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])/as.numeric(Aggregate_JTW_2016_2021[1,"transit"])-1)`), with transit mode share changing by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"transit"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"transit"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`. The following summarizes the mode split amongst those who used transit: 
-
-
 The number of people who used non-motorised modes shifted by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])-as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])/as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"])-1)`), with non-motorised mode share changing by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`.
 
 
-
-The number of people who worked from home changed by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])-as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"])/as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"])-1)`), with WFH share changing by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"worked_at_home"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"worked_at_home"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`. 
-
-
-
+The number of people who used transit changed by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])/as.numeric(Aggregate_JTW_2016_2021[1,"transit"])-1)`), with transit mode share changing by `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"transit"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"transit"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`. The following summarizes the mode split amongst those who used transit: 
 
 
 
@@ -1586,12 +1596,7 @@ The second largest change was in the amount of work from home, which increased b
 
 The number of people who were a passenger in a private vehicle increased by `r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])-as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]))`(`r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"])/as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"])-1)`). However, overall passenger mode share increased by a relatively small (`r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))`. 
 
-
-
-Non-motorised mode usage decreased (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])-as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])/as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"])-1)`), but the change in overall non-motorised mode share was only `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))`.
-
-
-Transit ridership also dropped (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])/as.numeric(Aggregate_JTW_2016_2021[1,"transit"])-1)`), as did the overall transit mode share (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"transit"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"transit"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`). The following summarizes the mode split amongst those who used transit: 
+Transit ridership dropped (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])-as.numeric(Aggregate_JTW_2016_2021[1,"transit"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"transit"])/as.numeric(Aggregate_JTW_2016_2021[1,"transit"])-1)`), as did the overall transit mode share (`r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"transit"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"transit"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"])))`). The following summarizes the mode split amongst those who used transit: 
 
 
 
@@ -1622,7 +1627,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Place of work in the rest of Greater Perth (not the City of Perth) and usual residence in Greater Perth, journey to work shares for transit modes, 2021 and 2016 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Place of work in the rest of Greater Perth (not the City of Perth) and usual residence in Greater Perth, journey to work mode share, 2021 and 2016 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Place of work in the rest of Greater Perth (not the City of Perth) and usual residence in Greater Perth, journey to work mode share, 2021 and 2016 censuses")
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("Greater Perth", "Greater Perth"), place_of_work = c("Rest of Greater Perth", "Rest of Greater Perth"))
 
@@ -1645,6 +1650,11 @@ Bus ridership fell by `r label_number(big.mark = ",")(-(as.numeric(Aggregate_JTW
 
 
 The number of people who used the train fell by `r label_number(big.mark = ",")(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])-as.numeric(Aggregate_JTW_2016_2021[1,"train"])))`(`r label_percent()(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"])/as.numeric(Aggregate_JTW_2016_2021[1,"train"])-1))`). Tain ridership as a share of transit ridership increased, but only by `r label_percent(accuracy = 0.1)((as.numeric(Aggregate_JTW_2016_2021[2,"train"]/( Aggregate_JTW_2016_2021[2,"transit"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"transit"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"transit"])))`. However, the overall train mode share dropped by `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"train"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))` to `r label_percent(accuracy = 0.1)(as.numeric(Aggregate_JTW_2016_2021[2,"train"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])))`.
+
+
+Non-motorised mode usage also decreased (`r label_number(big.mark = ",")(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])-as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]))`, `r label_percent()(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"])/as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"])-1)`), but the change in overall non-motorised mode share was only `r label_percent(accuracy = 0.1)(-(as.numeric(Aggregate_JTW_2016_2021[2,"non_motorised"]/(Aggregate_JTW_2016_2021[2,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[2,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[2,"transit"] + Aggregate_JTW_2016_2021[2,"non_motorised"] + Aggregate_JTW_2016_2021[2,"other_mode"] + Aggregate_JTW_2016_2021[2,"worked_at_home"])) - as.numeric(Aggregate_JTW_2016_2021[1,"non_motorised"]/(Aggregate_JTW_2016_2021[1,"private_vehicle_drive"] + Aggregate_JTW_2016_2021[1,"private_vehicle_passenger"] + Aggregate_JTW_2016_2021[1,"transit"] + Aggregate_JTW_2016_2021[1,"non_motorised"] + Aggregate_JTW_2016_2021[1,"other_mode"] + Aggregate_JTW_2016_2021[1,"worked_at_home"]))))`.
+
+
 
 
 ### 3.4.1 Place of work: Rest of Greater Perth; Usual residence: Heritage grouping
@@ -1747,7 +1757,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Heritage grouping residents whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work mode share, 2021 and 2016 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Heritage grouping residents whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work mode share, 2021 and 2016 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Heritage grouping residents whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work mode share, 2021 and 2016 censuses")
 
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("Heritage", "Heritage"), place_of_work = c("Rest of Greater Perth", "Rest of Greater Perth"))
@@ -1878,7 +1888,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Residence in North-south grouping whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work share for transit modes, 2021 and 2016 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Residence in North-south grouping whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work mode share, 2021 and 2016 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Residence in North-south grouping whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work mode share, 2021 and 2016 censuses")
 
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("North-south", "North-south"), place_of_work = c("Rest of Greater Perth", "Rest of Greater Perth"))
@@ -2010,7 +2020,7 @@ p
 kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram")]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Residents of the Outer-east grouping of LGAs, whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work share for transit modes, 2021 and 2016 censuses"
 )
 
-#kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Residents of the Outer-east grouping of LGAs, whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work mode share, 2021 and 2016 censuses")
+kable(untabyl(Aggregate_JTW_2016_2021[,c("Year", "train", "bus", "ferry", "tram", "private_vehicle_drive", "private_vehicle_passenger", "non_motorised", "other_mode", "worked_at_home" )]) %>% adorn_totals(where = "col") %>% adorn_percentages() %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Residents of the Outer-east grouping of LGAs, whose place of work is in Greater Perth but not within the (central) Perth LGA, journey to work mode share, 2021 and 2016 censuses")
 
 
 summary_table_add <- tibble(Year = c(2016, 2021), usual_residence = c("Outer-east", "Outer-east"), place_of_work = c("Rest of Greater Perth", "Rest of Greater Perth"))
@@ -2528,21 +2538,26 @@ Bus ridership amongst those with a usual residence within the North-south groupi
 
 --->
 
-# 4.0 Discussion
 
-## 4.1 Changes in mode share 
+## 3.6 Summary
 
-
-The following summarises the mode/activity share and number of people using each mode/working from home for the 2016 and 2021 censuses. 
+The following summarises each mode/activity for the 2016 and 2021 censuses by share and the number of people.  
 
 ```{r summary_table, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 
 #build summary table with transit modes aggregated
-transit_aggregate_summary_table <- tibble(summary_table[,"Year"], summary_table[,"usual_residence"], summary_table[,"place_of_work"], dplyr::mutate(summary_table, "transit" = rowSums((summary_table[,4:7]), na.rm = TRUE))[,"transit"], summary_table[,"private_vehicle_drive"], summary_table[,"private_vehicle_passenger"], summary_table[,"non_motorised"], summary_table[,"other_mode"], summary_table[,"worked_at_home"])
-
+transit_aggregate_summary_table <- tibble(
+  summary_table[,"Year"], 
+  summary_table[,"usual_residence"], 
+  summary_table[,"place_of_work"],  summary_table[,"private_vehicle_drive"], 
+  summary_table[,"private_vehicle_passenger"], 
+  dplyr::mutate(summary_table, "transit" = rowSums((summary_table[,4:7]), na.rm = TRUE))[,"transit"], 
+  summary_table[,"non_motorised"], 
+  summary_table[,"other_mode"], 
+  summary_table[,"worked_at_home"])
 transit_aggregate_summary_table_split <- split(transit_aggregate_summary_table, transit_aggregate_summary_table$Year)
 
-kable(transit_aggregate_summary_table_split %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), col.names = c("Year", "UR", "POW", "Transit","Drive", "Passenger", "Walk/Bike", "Other", "WFH", "Total"))
+kable(transit_aggregate_summary_table_split %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), col.names = c("Year", "UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH", "Total"))
 
 
 
@@ -2550,101 +2565,9 @@ kable(transit_aggregate_summary_table_split %>% adorn_totals(where = "col") %>% 
 
 ```
 
+The next table also provides a summary, but with the individual transit modes show separately. 
 
-```{r summary_table_differences, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
-
-transit_aggregate_summary_table_wider <- pivot_wider(transit_aggregate_summary_table, names_from = Year, values_from = c(transit, private_vehicle_drive, private_vehicle_passenger, non_motorised, other_mode, worked_at_home))
-
-change_transit_aggregate_summary_table <- tibble(
-  usual_residence = transit_aggregate_summary_table_wider$usual_residence, 
-  place_of_work = transit_aggregate_summary_table_wider$place_of_work, 
-  transit = transit_aggregate_summary_table_wider$transit_2021 - transit_aggregate_summary_table_wider$transit_2016, 
-  private_vehicle_drive = transit_aggregate_summary_table_wider$private_vehicle_drive_2021 - transit_aggregate_summary_table_wider$private_vehicle_drive_2016, 
-  private_vehicle_passenger = transit_aggregate_summary_table_wider$private_vehicle_passenger_2021 - transit_aggregate_summary_table_wider$private_vehicle_passenger_2016, 
-  non_motorised = transit_aggregate_summary_table_wider$non_motorised_2021 - transit_aggregate_summary_table_wider$non_motorised_2016, 
-  other_mode = transit_aggregate_summary_table_wider$other_mode_2021 - transit_aggregate_summary_table_wider$other_mode_2016,
-  worked_at_home = transit_aggregate_summary_table_wider$worked_at_home_2021 - transit_aggregate_summary_table_wider$worked_at_home_2016
-  )
-
-#mode share changes
-kable(change_transit_aggregate_summary_table %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting(), col.names = c("UR", "POW", "Transit","Drive", "Passenger", "Walk/Bike", "Other", "WFH", "Total"), caption = "Change in mode share by place of usual residence and place of work") %>%
-  column_spec(3, color = "white",
-              background = spec_color(change_transit_aggregate_summary_table$transit[1:13]/rowSums(change_transit_aggregate_summary_table[,3:8]), end = 0.7))  %>%
-  column_spec(4, color = "white",
-              background = spec_color(change_transit_aggregate_summary_table$private_vehicle_drive[1:13]/rowSums(change_transit_aggregate_summary_table[,3:8]), end = 0.7)) %>%
-  column_spec(5, color = "white",
-              background = spec_color(change_transit_aggregate_summary_table$private_vehicle_passenger[1:13]/rowSums(change_transit_aggregate_summary_table[,3:8]), end = 0.7)) %>%
-  column_spec(6, color = "white",
-              background = spec_color(change_transit_aggregate_summary_table$non_motorised[1:13]/rowSums(change_transit_aggregate_summary_table[,3:8]), end = 0.7)) %>%
-  column_spec(7, color = "white",
-              background = spec_color(change_transit_aggregate_summary_table$other_mode[1:13]/rowSums(change_transit_aggregate_summary_table[,3:8]), end = 0.7)) %>%
-  column_spec(8, color = "white",
-              background = spec_color(change_transit_aggregate_summary_table$worked_at_home[1:13]/rowSums(change_transit_aggregate_summary_table[,3:8]), end = 0.7)) 
-
-```
-
-
-The change in mode share table immediately above indicates that:
-____TO DO_____
-WRITE TEXT 
-
-
-
-
-
-
-The next tables show the changes in the people/drivers/passengers using each mode or working from home, for each place of usual residence and place of work. 
-
-```{r summary_table_differences_percentage, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
-
-
-percent_change_transit_aggregate_summary_table <- tibble(
-  usual_residence = transit_aggregate_summary_table_wider$usual_residence, 
-  place_of_work = transit_aggregate_summary_table_wider$place_of_work, 
-  transit = transit_aggregate_summary_table_wider$transit_2021 / transit_aggregate_summary_table_wider$transit_2016 - 1, 
-  private_vehicle_drive = transit_aggregate_summary_table_wider$private_vehicle_drive_2021 / transit_aggregate_summary_table_wider$private_vehicle_drive_2016 -1, 
-  private_vehicle_passenger = transit_aggregate_summary_table_wider$private_vehicle_passenger_2021 / transit_aggregate_summary_table_wider$private_vehicle_passenger_2016 -1, 
-  non_motorised = transit_aggregate_summary_table_wider$non_motorised_2021 / transit_aggregate_summary_table_wider$non_motorised_2016 -1 , 
-  other_mode = transit_aggregate_summary_table_wider$other_mode_2021 / transit_aggregate_summary_table_wider$other_mode_2016 -1,
-  worked_at_home = transit_aggregate_summary_table_wider$worked_at_home_2021 / transit_aggregate_summary_table_wider$worked_at_home_2016 -1
-  )
-
-
-#Volume changes
-kable(change_transit_aggregate_summary_table %>% adorn_totals(where = "col") %>% adorn_ns(), col.names = c("UR", "POW", "Transit","Drive", "Passenger", "Walk/Bike", "Other", "WFH", "Total"), caption = "Change in number of people using each mode / working from home, by place of usual residence and place of work")
-
-
-
-kable(percent_change_transit_aggregate_summary_table %>% adorn_pct_formatting(), col.names = c("UR", "POW", "Transit","Drive", "Passenger", "Walk/Bike", "Other", "WFH"), caption = "Percentage change in number of people using each mode / working from home, by place of usual residence and place of work" )  %>%
-  column_spec(3, color = "white",
-              background = spec_color(percent_change_transit_aggregate_summary_table$transit[1:13], end = 0.7))  %>%
-  column_spec(4, color = "white",
-              background = spec_color(percent_change_transit_aggregate_summary_table$private_vehicle_drive[1:13], end = 0.7)) %>%
-  column_spec(5, color = "white",
-              background = spec_color(percent_change_transit_aggregate_summary_table$private_vehicle_passenger[1:13], end = 0.7)) %>%
-  column_spec(6, color = "white",
-              background = spec_color(percent_change_transit_aggregate_summary_table$non_motorised[1:13], end = 0.7)) %>%
-  column_spec(7, color = "white",
-              background = spec_color(percent_change_transit_aggregate_summary_table$other_mode[1:13], end = 0.7)) %>%
-  column_spec(8, color = "white",
-              background = spec_color(percent_change_transit_aggregate_summary_table$worked_at_home[1:13], end = 0.7)) 
-
-
-
-```
-
-
-
-
-
-
-## 4.2 Changes in transit mode share 
-
-___TO DO____
-update this section to match above
-
-
-```{r summary_table_transit_breakdown, include=TRUE}
+```{r summary_table_transit_breakdown, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 
 
 #Build summary table for separate transit modes, all other modes together, plus WFH
@@ -2658,62 +2581,230 @@ kable(transit_breakdown_summary_table_split %>% adorn_totals(where = "col") %>% 
 ```
 
 
-The next table shows the changes in the number of people for each place of usual residence and place of work. 
+# 4.0 Discussion
 
-```{r summary_table_differences_transit_breakdown, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+## 4.1 Changes in population, and employment and/or study
 
-transit_breakdown_summary_table_wider <- pivot_wider(transit_breakdown_summary_table, names_from = Year, values_from = c(train, bus, ferry, tram, non_transit, worked_at_home))
+```{r summary_table_population_and_employment_differences, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+Population_and_employment_summary_table <- pivot_wider(data = Population_and_employment_summary_table, names_from = Year, values_from = c(Population, Employed))
 
-change_transit_breakdown_summary_table <- tibble(
-  usual_residence = transit_breakdown_summary_table_wider$usual_residence, 
-  place_of_work = transit_breakdown_summary_table_wider$place_of_work, 
-  train = transit_breakdown_summary_table_wider$train_2021 - transit_breakdown_summary_table_wider$train_2016, 
-  bus = transit_breakdown_summary_table_wider$bus_2021 - transit_breakdown_summary_table_wider$bus_2016, 
-  ferry = transit_breakdown_summary_table_wider$ferry_2021 - transit_breakdown_summary_table_wider$ferry_2016, 
-  tram = transit_breakdown_summary_table_wider$tram_2021 - transit_breakdown_summary_table_wider$tram_2016, 
-  non_transit = transit_breakdown_summary_table_wider$non_transit_2021 - transit_breakdown_summary_table_wider$non_transit_2016,
-  worked_at_home = transit_breakdown_summary_table_wider$worked_at_home_2021 - transit_breakdown_summary_table_wider$worked_at_home_2016
-  )
 
-kable(change_transit_aggregate_summary_table %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), col.names = c("UR", "POW", "Train","Bus", "Ferry", "Tram", "Non-transit", "WFH", "Total"))
+kable(Population_and_employment_summary_table[2:4,1:3] %>% adorn_totals() %>% adorn_percentages(denominator = "col",) %>% adorn_pct_formatting() %>% adorn_ns, caption = "Population summary") 
+
+kable(Population_and_employment_summary_table[2:4,c(1, 4:5)] %>% adorn_totals() %>% adorn_percentages(denominator = "col",) %>% adorn_pct_formatting() %>% adorn_ns, caption = "Ppopulation engaged in employment and/or study summary") 
+
+```
+
+## 4.2 Changes in mode share 
+
+The following table summarises changes in mode/activity share for each of the combinations of usual residence grouping and place of work.  
+
+
+```{r summary_table_mode_share_differences, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+summary_table_percentages <- summary_table %>% adorn_percentages()
+summary_table_percentages_split <- split(summary_table_percentages, summary_table_percentages$Year)
+
+
+#Build summary table of percentage changes
+summary_table_percentages_change <- tibble(
+  summary_table_percentages_split[["2021"]][,"usual_residence"], 
+  summary_table_percentages_split[["2021"]][,"place_of_work"], 
+  summary_table_percentages_split[["2021"]][,"train"] - summary_table_percentages_split[["2016"]][,"train"],
+  summary_table_percentages_split[["2021"]][,"bus"] - summary_table_percentages_split[["2016"]][,"bus"],    
+  summary_table_percentages_split[["2021"]][,"ferry"] - summary_table_percentages_split[["2016"]][,"ferry"],
+  summary_table_percentages_split[["2021"]][,"tram"] - summary_table_percentages_split[["2016"]][,"tram"],    
+  summary_table_percentages_split[["2021"]][,"private_vehicle_drive"] - summary_table_percentages_split[["2016"]][,"private_vehicle_drive"],    
+  summary_table_percentages_split[["2021"]][,"private_vehicle_passenger"] - summary_table_percentages_split[["2016"]][,"private_vehicle_passenger"],
+  summary_table_percentages_split[["2021"]][,"non_motorised"] - summary_table_percentages_split[["2016"]][,"non_motorised"],
+  summary_table_percentages_split[["2021"]][,"other_mode"] - summary_table_percentages_split[["2016"]][,"other_mode"],    
+  summary_table_percentages_split[["2021"]][,"worked_at_home"] - summary_table_percentages_split[["2016"]][,"worked_at_home"])
+
+
+#build summary table with transit modes aggregated
+transit_aggregate_summary_table_percentages_change <- tibble(
+  summary_table_percentages_change[,"usual_residence"], 
+  summary_table_percentages_change[,"place_of_work"],  
+  summary_table_percentages_change[,"private_vehicle_drive"], 
+  summary_table_percentages_change[,"private_vehicle_passenger"], 
+  dplyr::mutate(summary_table_percentages_change, "transit" = rowSums((summary_table_percentages_change[,3:6]), na.rm = TRUE))[,"transit"], 
+  summary_table_percentages_change[,"non_motorised"], 
+  summary_table_percentages_change[,"other_mode"], 
+  summary_table_percentages_change[,"worked_at_home"])
+
+
+
+
+  
+
+kable(transit_aggregate_summary_table_percentages_change %>% adorn_pct_formatting(), col.names = c("UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH"), caption = "Change in mode share by place of usual residence and place of work", align = 'lcrrrrrr') 
+
+#%>%
+#  column_spec(3, color = "white",
+#              background = spec_color(transit_aggregate_summary_table_percentages_change$private_vehicle_drive[1:13]/colSums(transit_aggregate_summary_table_percentages_change[,3])))  %>%
+#  column_spec(4, color = "white",
+#              background = spec_color(transit_aggregate_summary_table_percentages_change$private_vehicle_passenger[1:13]/colSums(transit_aggregate_summary_table_percentages_change[,4]))) %>%
+#  column_spec(5, color = "white",
+#background = spec_color(transit_aggregate_summary_table_percentages_change$transit[1:13]/colSums(transit_aggregate_summary_table_percentages_change[,5]))) %>%
+#  column_spec(6, color = "white",
+#              background = spec_color(transit_aggregate_summary_table_percentages_change$non_motorised[1:13]/colSums(transit_aggregate_summary_table_percentages_change[,6]))) %>%
+#  column_spec(7, color = "white",
+#              background = spec_color(transit_aggregate_summary_table_percentages_change$other_mode[1:13]/colSums(transit_aggregate_summary_table_percentages_change[,7]))) %>%
+#  column_spec(8, color = "white",
+#              background = spec_color(transit_aggregate_summary_table_percentages_change$worked_at_home[1:13]/colSums(transit_aggregate_summary_table_percentages_change[,8]))) 
+
+```
+
+
+WFH share increased for all usual residence and place of work combinations.  The largest increases were for travel to the (central) City of Perth (~+11%). Drive mode share increased the most for people living in the Outer-east whose place of work is in the City of Perth (+2.8%). It dropped overall (-1.8%), with the largest fall (-5.1%) amogst people who work somewhere other than in Greater Perth. Passenger mode share changes ranged from -0.5^[Outer-east usual residence to place of work in the (central) City of Perth.] to +0.6%^[Heritage usual residence to place of work in the (central) City of Perth.]. 
+Non-motorised mode share fell for all groupings and places of work, but only by small amounts.  The largest change was -2.5% for people with a usual residence in the Heritage grouping and a place of work in the (central) City of Perth. 
+The largest falls in mode share was amongst transit users with a place of work in the (central) City of Perth^[-11% overall, but -13.4% for people living in the Outer-east.], and did not increase in any of the sub-regions of Greater Perth. However, changes in transit mode share were relatively small for travel to places of work that were not in the central City of Perth, and for Greater Perth overall (ranging from -2% to -0.7%).  
+
+Overall the changes in mode share suggest: 
+
+- increases in the rate of WFH, especially amongst those with a place of work in the (central) City of Perth;
+- a mix of change in driver mode share, with it falling overall but rising for people with a place of work in the (central) City of Perth; 
+- a fall in transit mode share, especially amongst those with a place of work in the (central) City of Perth.
+
+The following tables examine changes in volume:
+
+
+
+```{r summary_table_mode_ridership_differences, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+summary_table_split <- split(summary_table, summary_table$Year)
+
+
+#Build summary table of volume changes
+summary_table_split_ridership_change <- tibble(
+  summary_table_split[["2021"]][,"usual_residence"], 
+  summary_table_split[["2021"]][,"place_of_work"], 
+  summary_table_split[["2021"]][,"train"] - summary_table_split[["2016"]][,"train"],
+  summary_table_split[["2021"]][,"bus"] - summary_table_split[["2016"]][,"bus"],    
+  summary_table_split[["2021"]][,"ferry"] - summary_table_split[["2016"]][,"ferry"],
+  summary_table_split[["2021"]][,"tram"] - summary_table_split[["2016"]][,"tram"],    
+  summary_table_split[["2021"]][,"private_vehicle_drive"] - summary_table_split[["2016"]][,"private_vehicle_drive"],    
+  summary_table_split[["2021"]][,"private_vehicle_passenger"] - summary_table_split[["2016"]][,"private_vehicle_passenger"],
+  summary_table_split[["2021"]][,"non_motorised"] - summary_table_split[["2016"]][,"non_motorised"],
+  summary_table_split[["2021"]][,"other_mode"] - summary_table_split[["2016"]][,"other_mode"],    
+  summary_table_split[["2021"]][,"worked_at_home"] - summary_table_split[["2016"]][,"worked_at_home"])
+
+
+#build summary table with transit modes aggregated
+transit_aggregate_summary_table_ridership_change <- tibble(
+  summary_table_split_ridership_change[,"usual_residence"], 
+  summary_table_split_ridership_change[,"place_of_work"],  
+  summary_table_split_ridership_change[,"private_vehicle_drive"], 
+  summary_table_split_ridership_change[,"private_vehicle_passenger"], 
+  dplyr::mutate(summary_table_split_ridership_change, "transit" = rowSums((summary_table_split_ridership_change[,3:6]), na.rm = TRUE))[,"transit"], 
+  summary_table_split_ridership_change[,"non_motorised"], 
+  summary_table_split_ridership_change[,"other_mode"], 
+  summary_table_split_ridership_change[,"worked_at_home"])
+
+
+kable(transit_aggregate_summary_table_ridership_change[1:4,] %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Summary of JTW volume changes between 2016 and 2021 census: Greater Perth; Heritage, North-south and Outer-east groupings of LGA place of usual residence", col.names = c("UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH", "Total"))
+
+
+
+#kable(transit_aggregate_summary_table_ridership_change %>% adorn_totals(where = "col") , caption = "Summary of JTW volume changes between 2016 and 2021 census: Greater Perth; Heritage, North-south and Outer-east groupings of LGA place of usual residence", col.names = c("UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH", "Total"))
+
+
+
+#kable(transit_aggregate_summary_table_ridership_change %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting(), caption = "Summary of JTW volume changes between 2016 and 2021 census: Greater Perth; Heritage, North-south and Outer-east groupings of LGA place of usual residence", col.names = c("UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH"))
+
 
 
 ```
 
-The next table shows the changes in the percentage of people for each place of usual residence and place of work. 
+Across Greater Perth the largest changes between the 2016 and 2021 census journeys to work were the +64,936 additional drivers and the +45,130 additional people working from home.  The overall loss in transit ridership (-5,371) was similar to the loss in the number of non-motorised mode users (-4,707) and the gain in people travelling as a passenger in a private vehicle (+7,456). Note, however, that the Freemantle train line was closed on the day of the census ^[See https://web.archive.org/web/20210805204805/https://www.transperth.wa.gov.au/service-updates, thanks to https://chartingtransport.com/category/mode-share/], so this may have been a contributing factor to the reduction in transit ridership.  
 
-```{r transit_breakdown_summary_table_percent_differences, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+Looking at the Heritage, North-south and Outer-east groupings individually, it appears that the North-south is where there has been most of the change in the number of drivers, passengers and transit riders.
+
+The next table compares volume changes for the JTW to places of work that are within the (central) City of Perth LGA:
 
 
-percent_change_transit_breakdown_summary_table <- tibble(
-  usual_residence = transit_breakdown_summary_table_wider$usual_residence, 
-  place_of_work = transit_breakdown_summary_table_wider$place_of_work, 
-  train = transit_breakdown_summary_table_wider$train_2021 / transit_breakdown_summary_table_wider$train_2016 - 1, 
-  bus = transit_breakdown_summary_table_wider$bus_2021 / transit_breakdown_summary_table_wider$bus_2016 -1, 
-  ferry = transit_breakdown_summary_table_wider$ferry_2021 / transit_breakdown_summary_table_wider$ferry_2016 -1, 
-  tram = transit_breakdown_summary_table_wider$tram_2021 / transit_breakdown_summary_table_wider$tram_2016 -1 , 
-  non_transit = transit_breakdown_summary_table_wider$non_transit_2021 / transit_breakdown_summary_table_wider$non_transit_2016 -1,
-  worked_at_home = transit_breakdown_summary_table_wider$worked_at_home_2021 / transit_breakdown_summary_table_wider$worked_at_home_2016 -1
-  )
 
-kable(percent_change_transit_breakdown_summary_table %>% adorn_pct_formatting(), col.names = c("UR", "POW", "Train","Bus", "Ferry", "Tram", "Non-transit", "WFH"))  %>%
-  column_spec(3, color = "white",
-              background = spec_color(percent_change_transit_breakdown_summary_table$train[1:13], end = 0.7))  %>%
-  column_spec(4, color = "white",
-              background = spec_color(percent_change_transit_breakdown_summary_table$bus[1:13], end = 0.7)) %>%
-  column_spec(5, color = "white",
-              background = spec_color(percent_change_transit_breakdown_summary_table$ferry[1:13], end = 0.7)) %>%
-  column_spec(6, color = "white",
-              background = spec_color(percent_change_transit_breakdown_summary_table$tram[1:13], end = 0.7)) %>%
-  column_spec(7, color = "white",
-              background = spec_color(percent_change_transit_breakdown_summary_table$non_transit[1:13], end = 0.7)) %>%
-  column_spec(8, color = "white",
-              background = spec_color(percent_change_transit_breakdown_summary_table$worked_at_home[1:13], end = 0.7)) 
+```{r summary_table_mode_ridership_differences_central_Perth, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+kable(transit_aggregate_summary_table_ridership_change[c(1, 5:8),] %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Summary of JTW volume changes between 2016 and 2021 census, Greater Perth and sub-groupings", col.names = c("UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH", "Total"))
 
 
 
 
 ```
+
+The values for the JTW to the central City of Perth suggest: 
+
+- City of Perth POWs saw proportionally: 
+  - less increase in driving
+  - less decrease in transit use
+  - less decrease in walk/bike use and 
+  - more increase in WFH.
+- transit ridership from the Heritage group of LGAs to the City of Perth actually went up (+724)^[Despite the scheduled closure of the Freemantle line.].  
+- WFH as a proportion of volume changes related to a POW in the City of Perth: 
+  - increased more in the North-south grouping (53.3%) and the Outer-east grouping (52.1%); whereas  
+  - for people living in the Heritage grouping the proportaion (40.8%) was generally in line with that for all JTW travel in Greater Perth (40.6%)
+was highest for those living in the North-south 
+
+The next table shows volume changes related to places of work that are not in the (central) City of Perth.  
+
+
+```{r summary_table_mode_ridership_differences_not_central_Perth, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+kable(transit_aggregate_summary_table_ridership_change[c(1, 9:13),] %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Summary of JTW volume changes between 2016 and 2021 census, Greater Perth and sub-groupings", col.names = c("UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH", "Total"))
+
+
+
+
+```
+
+In general, it appears that the drop in transit ridership was larger for JTW to places other than the (central) City of Perth, especially: 
+
+- for those living in the Heritage grouping of LGAs and travelling to the rest of Perth (-7.5%) 
+- for those with a POW that is in an Australia LGA that is not in Greater Perth (-10%).
+
+
+
+Finally, the following table compares the changes in volume as a proportion of the 2016 volumes:
+
+
+```{r summary_table_volume_change_as_a_proportion_of_2016_volume, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+summary_table_split_ridership_change_percent_of_2016 <- tibble(
+    summary_table_split[["2021"]][,"usual_residence"], 
+    summary_table_split[["2021"]][,"place_of_work"], 
+    summary_table_split_ridership_change$private_vehicle_drive / summary_table_split[["2016"]][,"private_vehicle_drive"],    
+    summary_table_split_ridership_change$private_vehicle_passenger / summary_table_split[["2016"]][,"private_vehicle_passenger"],
+    transit_aggregate_summary_table_ridership_change$transit / transit_aggregate_summary_table_split[["2016"]][,"transit"],
+    summary_table_split_ridership_change$non_motorised / summary_table_split[["2016"]][,"non_motorised"],
+    summary_table_split_ridership_change$other_mode / summary_table_split[["2016"]][,"other_mode"],    
+    summary_table_split_ridership_change$worked_at_home / summary_table_split[["2016"]][,"worked_at_home"]
+    )
+
+#build summary table with transit modes aggregated
+transit_aggregate_summary_table_split_ridership_change_percent_of_2016 <- tibble(
+  summary_table_split_ridership_change_percent_of_2016[,"usual_residence"], 
+  summary_table_split_ridership_change_percent_of_2016[,"place_of_work"],  
+  summary_table_split_ridership_change_percent_of_2016[,"private_vehicle_drive"], 
+  summary_table_split_ridership_change_percent_of_2016[,"private_vehicle_passenger"], 
+  summary_table_split_ridership_change_percent_of_2016[,"transit"], 
+  summary_table_split_ridership_change_percent_of_2016[,"non_motorised"], 
+  summary_table_split_ridership_change_percent_of_2016[,"other_mode"], 
+  summary_table_split_ridership_change_percent_of_2016[,"worked_at_home"])
+
+kable(transit_aggregate_summary_table_split_ridership_change_percent_of_2016 %>% adorn_pct_formatting(), caption = "Summary of JTW volume changes between 2016 and 2021 census as a percentage of 2016 volumes, Greater Perth and sub-groupings", col.names = c("UR", "POW", "Drive", "Passenger", "Transit", "Walk/Bike", "Other", "WFH"))
+
+
+
+
+
+```
+
+Drive and passenger ridership increased by up to 45%, especially for places of work within the City of Perth. Transit and walk/bike were mostly down.  WFH increased, especially for places of work within the (central) City of Perth. 
+
+
+
+## 4.3 Changes in train, bus and ferry mode share and ridership
+
 
 
 
