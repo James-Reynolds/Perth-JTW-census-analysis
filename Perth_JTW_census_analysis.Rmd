@@ -2805,8 +2805,128 @@ Drive and passenger ridership increased by up to 45%, especially for places of w
 
 ## 4.3 Changes in train, bus and ferry mode share and ridership
 
+The following table shows changes in mode share for the transit modes (separately), non-transit modes (combined) and WFH:
 
 
+```{r summary_table_transit_split, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+#build summary table with transit modes disaggregated
+transit_disaggregate_summary_table_percentages_change <- tibble(
+  summary_table_percentages_change[,"usual_residence"], 
+  summary_table_percentages_change[,"place_of_work"], 
+  summary_table_percentages_change[,"train"], 
+  summary_table_percentages_change[,"bus"], 
+  summary_table_percentages_change[,"ferry"],
+  summary_table_percentages_change[,"tram"],
+  dplyr::mutate(summary_table_percentages_change, "non_transit" = rowSums((summary_table_percentages_change[,7:10]), na.rm = TRUE))[,"non_transit"], 
+  summary_table_percentages_change[,"worked_at_home"])
+
+
+kable(transit_disaggregate_summary_table_percentages_change %>% adorn_pct_formatting(), col.names = c("UR", "POW", "Train", "Bus", "Ferry", "Tram", "Non-transit", "WFH"), caption = "Change in mode share by place of usual residence and place of work", align = 'lcrrrrrr') 
+
+
+
+
+
+```
+
+
+Train mode share fell throughout the Greater Perth region. The falls were greatest for trips to the (central) City of Perth (-8.6%), especially amongst those whose usual residence is in the North-south (-9.5%) or Outer-east LGAs. The pattern was similar for bus mode share changes, although the falls in mode share were smaller (at -2.3% to -2.9% for trips to the City of Perth).
+
+The following tables examine changes in volume:
+
+
+
+```{r summary_table_transit_ridership_differences, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+summary_table_split <- split(summary_table, summary_table$Year)
+
+
+#build summary table with transit modes aggregated
+transit_disaggregate_summary_table_ridership_change <- tibble(
+  summary_table_split_ridership_change[,"usual_residence"], 
+  summary_table_split_ridership_change[,"place_of_work"],  
+  summary_table_split_ridership_change[,"train"], 
+  summary_table_split_ridership_change[,"bus"], 
+  summary_table_split_ridership_change[,"ferry"],
+  summary_table_split_ridership_change[,"tram"],
+  dplyr::mutate(summary_table_split_ridership_change, "non_transit" = rowSums((summary_table_split_ridership_change[,7:10]), na.rm = TRUE))[,"non_transit"], 
+   summary_table_split_ridership_change[,"worked_at_home"])
+
+
+kable(transit_disaggregate_summary_table_ridership_change[1:4,] %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Summary of JTW volume changes between 2016 and 2021 census: Greater Perth; Heritage, North-south and Outer-east groupings of LGA place of usual residence", col.names = c("UR", "POW", "Train", "Bus", "Ferry", "Tram", "Non-transit", "WFH", "Total"))
+
+
+
+kable(transit_disaggregate_summary_table_ridership_change %>% adorn_totals(where = "col") , caption = "Summary of JTW volume changes between 2016 and 2021 census: Greater Perth; Heritage, North-south and Outer-east groupings of LGA place of usual residence", col.names = c("UR", "POW", "Train", "Bus", "Ferry", "Tram", "Non-transit", "WFH", "Total"))
+
+
+
+kable(transit_aggregate_summary_table_ridership_change %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting(), caption = "Summary of JTW volume changes between 2016 and 2021 census: Greater Perth; Heritage, North-south and Outer-east groupings of LGA place of usual residence", col.names = c("UR", "POW", "Train", "Bus", "Ferry", "Tram", "Non-transit", "WFH"))
+
+
+
+```
+
+Across Greater Perth the largest changes between the 2016 and 2021 census journeys was the loss of 4,090 train riders and the gain of 1,584 bus riders with a place of work in the City of Perth and a usual residence in the Heritage grouping. Note, however, that the Freemantle train line was closed on the day of the census ^[See https://web.archive.org/web/20210805204805/https://www.transperth.wa.gov.au/service-updates, thanks to https://chartingtransport.com/category/mode-share/], which might explain the apparent shift from train to bus in the Heritage grouping of LGAs.  
+
+The next table compares volume changes for the JTW to places of work that are within the (central) City of Perth LGA:
+```{r summary_table_transit_ridership_differences_central_Perth, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+kable(transit_disaggregate_summary_table_ridership_change[c(1, 5:8),] %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Summary of JTW volume changes between 2016 and 2021 census, Greater Perth and sub-groupings", col.names = c("UR", "POW", "Train", "Bus", "Ferry", "Tram", "Non-transit", "WFH", "Total"))
+
+
+
+
+```
+
+The next table shows volume changes related to places of work that are not in the (central) City of Perth.  
+
+
+```{r summary_table_transit_mode_ridership_differences_not_central_Perth, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+kable(transit_disaggregate_summary_table_ridership_change[c(1, 9:13),] %>% adorn_totals(where = "col") %>% adorn_percentages(denominator = "row") %>% adorn_pct_formatting() %>% adorn_ns(), caption = "Summary of JTW volume changes between 2016 and 2021 census, Greater Perth and sub-groupings", col.names = c("UR", "POW", "Train", "Bus", "Ferry", "Tram", "Non-transit", "WFH", "Total"))
+
+
+
+
+```
+
+Finally, the following table compares the changes in volume as a proportion of the 2016 volumes:
+
+
+```{r summary_table_transit_volume_change_as_a_proportion_of_2016_volume, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+summary_table_split_transit_ridership_change_percent_of_2016 <- tibble(
+    summary_table_split[["2021"]][,"usual_residence"], 
+    summary_table_split[["2021"]][,"place_of_work"], 
+    summary_table_split_ridership_change$train / summary_table_split[["2016"]][,"train"],    
+    summary_table_split_ridership_change$bus / summary_table_split[["2016"]][,"bus"],
+    summary_table_split_ridership_change$ferry / summary_table_split[["2016"]][,"ferry"],
+    summary_table_split_ridership_change$tram / summary_table_split[["2016"]][,"tram"],
+    transit_disaggregate_summary_table_ridership_change$non_transit / transit_breakdown_summary_table_split[["2016"]][,"non_transit"],
+    summary_table_split_ridership_change$worked_at_home / summary_table_split[["2016"]][,"worked_at_home"]
+    )
+
+#build summary table with transit modes disaggregated
+transit_disaggregate_summary_table_split_ridership_change_percent_of_2016 <- tibble(
+  summary_table_split_transit_ridership_change_percent_of_2016[,"usual_residence"], 
+  summary_table_split_transit_ridership_change_percent_of_2016[,"place_of_work"],  
+  summary_table_split_transit_ridership_change_percent_of_2016[,"train"], 
+  summary_table_split_transit_ridership_change_percent_of_2016[,"bus"],
+  summary_table_split_transit_ridership_change_percent_of_2016[,"ferry"],
+  summary_table_split_transit_ridership_change_percent_of_2016[,"tram"],
+  summary_table_split_transit_ridership_change_percent_of_2016[,"non_transit"],
+  summary_table_split_ridership_change_percent_of_2016[,"worked_at_home"])
+
+kable(transit_disaggregate_summary_table_split_ridership_change_percent_of_2016 %>% adorn_pct_formatting(), caption = "Summary of JTW volume changes between 2016 and 2021 census as a percentage of 2016 volumes, Greater Perth and sub-groupings", col.names = c("UR", "POW", "Train", "Bus", "Ferry", "Tram", "Non-transit", "WFH"))
+
+
+
+
+
+```
 
 
 
