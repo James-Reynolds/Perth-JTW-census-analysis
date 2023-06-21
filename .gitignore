@@ -37,3 +37,9 @@ vignettes/*.pdf
 
 # background docs
 /00\ background\ docs
+
+#GVC summary
+/02_GVC_summary/
+
+#data from WA PTA
+/03_data_from_WA_PTA
